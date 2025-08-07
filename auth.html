@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login / Sign Up - Givta</title>
+    <meta name="description" content="Access your Givta smart wallet. Login or create a new account to start sending and receiving money.">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💰</text></svg>">
+    <style>
+        /* Re-using styles from index.html for consistency */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .auth-container {
+            background: white;
+            padding: 2.5rem;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 420px;
+            text-align: center;
+        }
+        .logo {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+            color: #667eea;
+        }
+        .auth-title {
+            font-size: 1.8rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+            color: #333;
+        }
+        .auth-subtitle {
+            color: #666;
+            margin-bottom: 2rem;
+        }
+        .form-group {
+            margin-bottom: 1.5rem;
+            text-align: left;
+        }
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+        .form-input {
+            width: 100%;
+            padding: 0.8rem 1rem;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+        .form-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+        }
+        .btn {
+            width: 100%;
+            padding: 1rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        .btn-google {
+            background: white;
+            color: #333;
+            border: 1px solid #ddd;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        .divider {
+            margin: 1.5rem 0;
+            text-align: center;
+            color: #aaa;
+            position: relative;
+        }
+        .divider::before, .divider::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            width: 40%;
+            height: 1px;
+            background: #ddd;
+        }
+        .divider::before { left: 0; }
+        .divider::after { right: 0; }
+        .toggle-form {
+            margin-top: 1.5rem;
+            font-size: 0.9rem;
+        }
+        .toggle-form button {
+            background: none;
+            border: none;
+            color: #667eea;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .forgot-password {
+            text-align: right;
+            font-size: 0.8rem;
+            margin-top: -1rem;
+            margin-bottom: 1.5rem;
+        }
+        .forgot-password a {
+            color: #667eea;
+            text-decoration: none;
+        }
+        #signup-form {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="auth-container">
+        <div class="logo">💰 Givta</div>
+        
+        <!-- Login Form -->
+        <div id="login-form">
+            <h1 class="auth-title">Welcome Back!</h1>
+            <p class="auth-subtitle">Sign in to continue to your wallet.</p>
+            <form id="loginForm" action="javascript:void(0);">
+                <div class="form-group">
+                    <label for="login-email" class="form-label">Email Address</label>
+                    <input type="email" id="login-email" class="form-input" required>
+                </div>
+                <div class="form-group">
+                    <label for="login-password" class="form-label">Password</label>
+                    <input type="password" id="login-password" class="form-input" required>
+                </div>
+                <div class="forgot-password">
+                    <a href="#">Forgot Password?</a>
+                </div>
+                <button type="submit" class="btn btn-primary">Login</button>
+            </form>
+            <div class="divider">OR</div>
+            <button class="btn btn-google">
+                <img src="https://www.google.com/favicon.ico" alt="Google icon" width="20" height="20">
+                Continue with Google
+            </button>
+            <p class="toggle-form">
+                Don't have an account? <button onclick="toggleForms()">Sign Up</button>
+            </p>
+        </div>
+
+        <!-- Signup Form -->
+        <div id="signup-form">
+            <h1 class="auth-title">Create Account</h1>
+            <p class="auth-subtitle">Join Givta and start your journey.</p>
+            <form id="signupForm" action="javascript:void(0);">
+                <div class="form-group">
+                    <label for="signup-name" class="form-label">Full Name</label>
+                    <input type="text" id="signup-name" class="form-input" required>
+                </div>
+                <div class="form-group">
+                    <label for="signup-email" class="form-label">Email Address</label>
+                    <input type="email" id="signup-email" class="form-input" required>
+                </div>
+                <div class="form-group">
+                    <label for="signup-password" class="form-label">Password</label>
+                    <input type="password" id="signup-password" class="form-input" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Create Account</button>
+            </form>
+            <div class="divider">OR</div>
+            <button class="btn btn-google">
+                <img src="https://www.google.com/favicon.ico" alt="Google icon" width="20" height="20">
+                Continue with Google
+            </button>
+            <p class="toggle-form">
+                Already have an account? <button onclick="toggleForms()">Login</button>
+            </p>
+        </div>
+    </div>
+
+    <script>
+        function toggleForms() {
+            const loginForm = document.getElementById('login-form');
+            const signupForm = document.getElementById('signup-form');
+            if (loginForm.style.display === 'none') {
+                loginForm.style.display = 'block';
+                signupForm.style.display = 'none';
+            } else {
+                loginForm.style.display = 'none';
+                signupForm.style.display = 'block';
+            }
+        }
+
+        // IMPORTANT: This is a mock submission handler.
+        // In a real application, you would send this data to a secure backend API.
+        // Sending user credentials directly to an email address from the client-side
+        // is insecure and not recommended.
+        function handleFormSubmit(event) {
+            event.preventDefault();
+            const form = event.target;
+            const formData = new FormData(form);
+            const data = Object.fromEntries(formData.entries());
+            
+            // This is where you would make an API call to your backend.
+            // For example: fetch('/api/login', { method: 'POST', body: JSON.stringify(data) })
+            
+            alert(`Form submitted!\\n\\nIn a real app, this data would be sent to a server, not an email.\\n\\nData: ${JSON.stringify(data)}`);
+            
+            // The server would then handle sending an email to 'givtamanager@gmail.com'
+            // after processing the login/signup attempt.
+            
+            // For demonstration, we'll just redirect to the wallet page.
+            // In a real app, the server would respond with a success/error message
+            // and you would handle the redirect based on that.
+            window.location.href = '/wallet'; // Redirects to the PWA wallet route
+        }
+
+        document.getElementById('loginForm').addEventListener('submit', handleFormSubmit);
+        document.getElementById('signupForm').addEventListener('submit', handleFormSubmit);
+    </script>
+</body>
+</html>
