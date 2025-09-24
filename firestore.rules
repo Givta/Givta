@@ -1,0 +1,163 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && request.auth.token.admin == true;
+    }
+
+    function isValidUser() {
+      return isAuthenticated() &&
+             request.auth.token.email_verified == true;
+    }
+
+    // Users collection
+    match /users/{userId} {
+      // Users can read and write their own data
+      allow read, write: if isOwner(userId);
+
+      // Allow creating user document during registration (user creating their own profile)
+      allow create: if isAuthenticated() && request.auth.uid == userId;
+
+      // Allow reading user data for referrals and tips
+      allow read: if isAuthenticated();
+
+      // Allow admins to read all user data
+      allow read: if isAdmin();
+    }
+
+    // Wallets collection
+    match /wallets/{walletId} {
+      // Users can read their own wallet
+      allow read: if isAuthenticated() &&
+        resource.data.userId == request.auth.uid;
+
+      // Users can create their own wallet
+      allow create: if isAuthenticated() &&
+        request.resource.data.userId == request.auth.uid;
+
+      // Users can update their own wallet
+      allow update: if isAuthenticated() &&
+        resource.data.userId == request.auth.uid;
+
+      // Allow admins to manage wallets
+      allow read, write: if isAdmin();
+    }
+
+    // Transactions collection
+    match /transactions/{transactionId} {
+      // Users can read their own transactions
+      allow read: if isAuthenticated() &&
+        resource.data.userId == request.auth.uid;
+
+      // Users can create their own transactions
+      allow create: if isAuthenticated() &&
+        request.resource.data.userId == request.auth.uid;
+
+      // Only admins can update or delete transactions
+      allow update, delete: if isAdmin();
+
+      // Allow admins to read all transactions
+      allow read: if isAdmin();
+    }
+
+    // Referrals collection
+    match /referrals/{referralId} {
+      // Referrers can read and create their referrals
+      allow read: if isAuthenticated() &&
+        (resource.data.referrerId == request.auth.uid ||
+         resource.data.referredId == request.auth.uid);
+
+      allow create: if isAuthenticated() &&
+        request.resource.data.referrerId == request.auth.uid;
+
+      // Only admins can update referrals
+      allow update: if isAdmin();
+
+      // Allow admins to read all referrals
+      allow read: if isAdmin();
+    }
+
+    // Notifications collection
+    match /notifications/{notificationId} {
+      // Users can read and manage their own notifications
+      allow read, write: if isAuthenticated() &&
+        resource.data.userId == request.auth.uid;
+
+      // Users can create notifications for themselves
+      allow create: if isAuthenticated() &&
+        request.resource.data.userId == request.auth.uid;
+
+      // Allow admins to manage all notifications
+      allow read, write: if isAdmin();
+    }
+
+    // Tips collection
+    match /tips/{tipId} {
+      // Users can read tips they're involved in
+      allow read: if isAuthenticated() &&
+        (resource.data.senderId == request.auth.uid ||
+         resource.data.recipientId == request.auth.uid);
+
+      // Senders can create tips
+      allow create: if isAuthenticated() &&
+        request.resource.data.senderId == request.auth.uid;
+
+      // Only admins can update tips
+      allow update: if isAdmin();
+
+      // Allow admins to read all tips
+      allow read: if isAdmin();
+    }
+
+    // WhatsApp Sessions collection
+    match /whatsapp_sessions/{sessionId} {
+      // Users can read and manage their own WhatsApp sessions
+      allow read, write: if isAuthenticated() &&
+        resource.data.userId == request.auth.uid;
+
+      // Users can create their own WhatsApp sessions
+      allow create: if isAuthenticated() &&
+        request.resource.data.userId == request.auth.uid;
+
+      // Allow admins to manage all WhatsApp sessions
+      allow read, write: if isAdmin();
+    }
+
+    // Analytics collection (read-only for users)
+    match /analytics/{document=**} {
+      // Only admins can write analytics data
+      allow write: if isAdmin();
+
+      // Users can read their own analytics
+      allow read: if isAuthenticated() &&
+        resource.data.userId == request.auth.uid;
+
+      // Allow admins to read all analytics
+      allow read: if isAdmin();
+    }
+
+    // System configuration (admin only)
+    match /config/{document=**} {
+      allow read, write: if isAdmin();
+    }
+
+    // Rate limiting and abuse prevention
+    match /{document=**} {
+      // Prevent excessive writes from single user
+      allow write: if isAuthenticated() &&
+        request.auth.token.lastWriteTime == null ||
+        (request.time.toMillis() - request.auth.token.lastWriteTime.toMillis()) > 1000;
+
+      // Additional security rules can be added here
+    }
+  }
+}

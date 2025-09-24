@@ -1,0 +1,7 @@
+{
+  "projects": {
+    "default": "givta-94cb8",
+    "development": "givta-dev",
+    "staging": "givta-staging"
+  }
+}
