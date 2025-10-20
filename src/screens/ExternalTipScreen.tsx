@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Alert } from 'react-native';
+import React, { useEffect, useState, useMemo } from 'react';
+import { View, Text, StyleSheet, ScrollView, Alert, ActivityIndicator } from 'react-native';
 import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -45,9 +45,17 @@ export const ExternalTipScreen: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Memoize tipLinkId to prevent unnecessary re-renders
+  const tipLinkId = useMemo(() => route.params?.tipLinkId, [route.params]);
+
   useEffect(() => {
-    loadTipLink();
-  }, []);
+    if (tipLinkId) {
+      loadTipLink();
+    } else {
+      setError('Invalid tip link ID');
+      setLoading(false);
+    }
+  }, [tipLinkId]);
 
   const loadTipLink = async () => {
     try {

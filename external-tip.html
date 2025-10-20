@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Givta - Send a Tip</title>
+    <meta name="description" content="Send a tip to someone through Givta">
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/12.3.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/12.3.0/firebase-firestore.js"></script>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background-color: #f8f9fa;
+            color: #1c1c1e;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 480px;
+            margin: 0 auto;
+            padding: 16px;
+            min-height: 100vh;
+        }
+
+        .loading, .error {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            text-align: center;
+            padding: 32px;
+        }
+
+        .loading-spinner {
+            width: 48px;
+            height: 48px;
+            border: 4px solid #e1e5e9;
+            border-top: 4px solid #4B0082;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 24px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .title {
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 8px;
+            color: #1c1c1e;
+        }
+
+        .subtitle {
+            font-size: 14px;
+            color: #8e8e93;
+        }
+
+        .card {
+            background: white;
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .description {
+            font-size: 16px;
+            color: #1c1c1e;
+            line-height: 24px;
+            margin-bottom: 12px;
+        }
+
+        .custom-message {
+            font-size: 16px;
+            color: #4B0082;
+            font-style: italic;
+            text-align: center;
+            padding: 12px;
+            background: #f8f2ff;
+            border-radius: 8px;
+        }
+
+        .stats-container {
+            display: flex;
+            justify-content: space-around;
+            margin: 32px 0;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #4B0082;
+            display: block;
+            margin-bottom: 4px;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #8e8e93;
+        }
+
+        .button-container {
+            margin: 32px 0;
+        }
+
+        .button {
+            width: 100%;
+            background-color: #4B0082;
+            color: white;
+            padding: 16px;
+            border: none;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            transition: background-color 0.2s;
+        }
+
+        .button:hover {
+            background-color: #6A0DAD;
+        }
+
+        .button.secondary {
+            background-color: #8e8e93;
+        }
+
+        .button.secondary:hover {
+            background-color: #6e7e8b;
+        }
+
+        .info-card {
+            padding: 16px;
+        }
+
+        .info-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .info-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .info-icon {
+            width: 20px;
+            height: 20px;
+            margin-right: 12px;
+            color: #8e8e93;
+        }
+
+        .info-text {
+            font-size: 14px;
+            color: #8e8e93;
+            flex: 1;
+        }
+
+        .error-icon {
+            width: 64px;
+            height: 64px;
+            color: #ff3b30;
+            margin-bottom: 24px;
+        }
+
+        .error-title {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .error-message {
+            font-size: 16px;
+            color: #8e8e93;
+            margin-bottom: 24px;
+        }
+
+        .alert {
+            padding: 16px;
+            background-color: #ffeaa7;
+            border-radius: 8px;
+            margin-bottom: 24px;
+            border-left: 4px solid #d63031;
+        }
+
+        .alert-title {
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+
+        .alert-text {
+            font-size: 14px;
+            color: #7f6b00;
+        }
+
+        .download-alert {
+            background-color: #e8f5e8;
+            border-left-color: #4caf50;
+        }
+
+        .download-alert .alert-text {
+            color: #1b5e20;
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 12px;
+            }
+            .title {
+                font-size: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Loading State -->
+        <div id="loading" class="loading" style="display: block;">
+            <div class="loading-spinner"></div>
+            <div class="title">Loading Tip Link...</div>
+        </div>
+
+        <!-- Error State -->
+        <div id="error" class="error" style="display: none;">
+            <svg class="error-icon" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+            </svg>
+            <div class="error-title">Error</div>
+            <div id="error-message" class="error-message">Something went wrong</div>
+            <button class="button secondary" onclick="goBack()">Go Back</button>
+        </div>
+
+        <!-- Content State -->
+        <div id="content" style="display: none;">
+            <!-- Mobile App Alert -->
+            <div id="mobile-alert" class="alert download-alert" style="display: none;">
+                <div class="alert-title">💡 For the Best Experience</div>
+                <div class="alert-text">
+                    Download the Givta app for faster tipping and better features.
+                    <a href="https://givta.app" target="_blank">Get the App</a>
+                </div>
+            </div>
+
+            <!-- Header -->
+            <div class="header">
+                <div class="title" id="tip-title">Tip Link</div>
+                <div class="subtitle" id="tip-subtitle">Loading stats...</div>
+            </div>
+
+            <!-- Description Card -->
+            <div class="card description-card">
+                <div id="tip-description" class="description">Loading description...</div>
+                <div id="custom-message" class="custom-message" style="display: none;"></div>
+            </div>
+
+            <!-- Stats -->
+            <div class="stats-container">
+                <div class="stat-item">
+                    <svg width="24" height="24" fill="#4B0082" viewBox="0 0 24 24">
+                        <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                    </svg>
+                    <span id="tips-count" class="stat-value">0</span>
+                    <div class="stat-label">Tips</div>
+                </div>
+                <div class="stat-item">
+                    <svg width="24" height="24" fill="#4B0082" viewBox="0 0 24 24">
+                        <path d="M16 4c0-1.11-0.89-2-2-2s-2 0.89-2 2c0 1.11 0.89 2 2 2s2-0.89 2-2zM12 6l-6.58 3.84c-0.762 0.445-1.079 1.42-0.707 2.209l1.22 3.07c0.244 0.613 0.791 1.088 1.439 1.221l2.741 0.557c0.346 0.07 0.71-0.018 1.02-0.218l2.381-1.382c0.334-0.194 0.721-0.194 1.056 0.001l2.38 1.383c0.313 0.181 0.677 0.288 1.022 0.218l2.741-0.557c0.648-0.133 1.195-0.608 1.439-1.221l1.22-3.071c0.372-0.789 0.055-1.763-0.707-2.209l-6.58-3.84c-0.671-0.391-1.47-0.391-2.14 0z"/>
+                    </svg>
+                    <span id="tippers-count" class="stat-value">0</span>
+                    <div class="stat-label">Tippers</div>
+                </div>
+                <div class="stat-item">
+                    <svg width="24" height="24" fill="#4B0082" viewBox="0 0 24 24">
+                        <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
+                    </svg>
+                    <span id="views-count" class="stat-value">0</span>
+                    <div class="stat-label">Views</div>
+                </div>
+            </div>
+
+            <!-- Send Tip Button -->
+            <div class="button-container">
+                <button id="send-tip-button" class="button">Send a Tip 💝</button>
+            </div>
+
+            <!-- Info Card -->
+            <div class="card info-card">
+                <div class="info-item">
+                    <svg class="info-icon" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
+                    </svg>
+                    <div id="privacy-text" class="info-text">You must log in to send tips</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Firebase (browser version)
+        const firebaseConfig = {
+            apiKey: "AIzaSyDvssOJOXt7QbS77XUUxUhGjH-TmnKVjjg",
+            authDomain: "givta-94cb8.firebaseapp.com",
+            projectId: "givta-94cb8",
+            storageBucket: "givta-94cb8.firebasestorage.app",
+            messagingSenderId: "740641129167",
+            appId: "1:740641129167:web:c789945191a72f0832edba"
+        };
+
+        // Initialize Firebase
+        if (!window.firebase) {
+            window.firebase = {};
+        }
+        const app = window.firebase.initializeApp ? window.firebase.initializeApp(firebaseConfig) : firebase.initializeApp(firebaseConfig);
+        const db = firebase.getFirestore ? firebase.getFirestore(app) : app.firestore();
+
+        // Get tip link ID from URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const tipLinkId = urlParams.get('id') || window.location.pathname.split('/').pop();
+
+        // Detect if user is on mobile
+        function isMobile() {
+            return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        }
+
+        // Load tip link data
+        async function loadTipLink() {
+            try {
+                if (!tipLinkId) {
+                    showError('Invalid tip link ID');
+                    return;
+                }
+
+                // Get tip link data from Firebase
+                const docRef = firebase.doc ? firebase.doc(db, 'tipLinks', tipLinkId) : firebase.collection('tipLinks').doc(tipLinkId);
+                const docSnap = await firebase.getDoc ? firebase.getDoc(docRef) : docRef.get();
+
+                if (!docSnap.exists) {
+                    showError('Tip link not found');
+                    return;
+                }
+
+                const tipLink = docSnap.data();
+
+                if (!tipLink.isActive) {
+                    showError('This tip link is no longer active');
+                    return;
+                }
+
+                displayTipLink(tipLink);
+                showContent();
+
+            } catch (error) {
+                console.error('Error loading tip link:', error);
+                showError('Failed to load tip link. Please check your connection.');
+            }
+        }
+
+        // Display tip link data
+        function displayTipLink(tipLink) {
+            // Update header
+            document.getElementById('tip-title').textContent = tipLink.title || 'Tip Link';
+            document.getElementById('tip-subtitle').textContent =
+                `Total Tips: ${tipLink.totalTips || 0} | Tippers: ${tipLink.totalTippers || 0}`;
+
+            // Update description
+            document.getElementById('tip-description').textContent = tipLink.description || '';
+
+            // Update custom message
+            if (tipLink.settings?.customMessage) {
+                document.getElementById('custom-message').textContent = `"${tipLink.settings.customMessage}"`;
+                document.getElementById('custom-message').style.display = 'block';
+            }
+
+            // Update stats
+            document.getElementById('tips-count').textContent = tipLink.totalTips || 0;
+            document.getElementById('tippers-count').textContent = tipLink.totalTippers || 0;
+            document.getElementById('views-count').textContent = tipLink.views || 0;
+
+            // Update privacy settings
+            const privacyText = tipLink.settings?.allowAnonymous
+                ? 'Anonymous tips are allowed on this link'
+                : 'You must log in to send tips';
+            document.getElementById('privacy-text').textContent = privacyText;
+
+            // Show mobile app suggestion if not on mobile
+            if (!isMobile()) {
+                document.getElementById('mobile-alert').style.display = 'block';
+            }
+
+            // Handle send tip button
+            document.getElementById('send-tip-button').onclick = () => {
+                handleSendTip(tipLink);
+            };
+        }
+
+        // Handle send tip click
+        function handleSendTip(tipLink) {
+            if (isMobile()) {
+                // Try to open mobile app deep link
+                const appUrl = `givta://external-tip?id=${tipLinkId}`;
+                const playStoreUrl = 'https://play.google.com/store/apps/details?id=com.unusualdan.Givta';
+
+                window.location.href = appUrl;
+
+                // Fallback to Play Store after 2 seconds
+                setTimeout(() => {
+                    window.location.href = playStoreUrl;
+                }, 2000);
+            } else {
+                // Redirect to web app or show download message
+                alert('Please download the Givta mobile app to send tips.');
+                window.open('https://givta.app', '_blank');
+            }
+        }
+
+        // Show/hide states
+        function showLoading() {
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('error').style.display = 'none';
+            document.getElementById('content').style.display = 'none';
+        }
+
+        function showError(message) {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('error').style.display = 'flex';
+            document.getElementById('content').style.display = 'none';
+            document.getElementById('error-message').textContent = message;
+        }
+
+        function showContent() {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('error').style.display = 'none';
+            document.getElementById('content').style.display = 'block';
+        }
+
+        // Go back function
+        window.goBack = function() {
+            window.history.back();
+        }
+
+        // Initialize when DOM loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check if Firebase is already loaded
+            if (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length) {
+                // Firebase already initialized
+                loadTipLink();
+            } else {
+                // Wait for Firebase to load
+                setTimeout(loadTipLink, 100);
+            }
+        });
+
+        // Handle page visibility (for app detection)
+        document.addEventListener('visibilitychange', function() {
+            if (document.hidden) {
+                // Page became hidden, user might have switched to app
+                console.log('User may have switched to the app');
+            }
+        });
+    </script>
+</body>
+</html>
