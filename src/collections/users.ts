@@ -173,6 +173,17 @@ export class UserCollection {
     return null;
   }
 
+  // Check if username is available
+  async isUsernameAvailable(username: string): Promise<boolean> {
+    // Check both username field and displayName field
+    const [usernameQuery, displayNameQuery] = await Promise.all([
+      getDocs(query(collection(db, this.collectionName), where('username', '==', username))),
+      getDocs(query(collection(db, this.collectionName), where('displayName', '==', username)))
+    ]);
+
+    return usernameQuery.empty && displayNameQuery.empty;
+  }
+
   // Search users by display name (for tipping)
   async searchByDisplayName(searchTerm: string, limit: number = 10): Promise<User[]> {
     try {

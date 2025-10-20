@@ -78,8 +78,8 @@ export class TransactionCollection {
       return {
         ...data,
         id: transactionSnap.id,
-        createdAt: new Date(data.createdAt),
-        updatedAt: new Date(data.updatedAt),
+        createdAt: data.createdAt ? new Date(data.createdAt) : new Date(),
+        updatedAt: data.updatedAt ? new Date(data.updatedAt) : new Date(),
         completedAt: data.completedAt ? new Date(data.completedAt) : undefined,
       } as Transaction;
     }
@@ -137,8 +137,8 @@ export class TransactionCollection {
       return {
         ...data,
         id: doc.id,
-        createdAt: new Date(data.createdAt),
-        updatedAt: new Date(data.updatedAt),
+        createdAt: data.createdAt ? new Date(data.createdAt) : new Date(),
+        updatedAt: data.updatedAt ? new Date(data.updatedAt) : new Date(),
         completedAt: data.completedAt ? new Date(data.completedAt) : undefined,
       } as Transaction;
     });

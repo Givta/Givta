@@ -11,7 +11,8 @@
       },
       "android": {
         "resourceClass": "medium"
-      }
+      },
+      "channel": "development"
     },
     "preview": {
       "distribution": "internal",
@@ -21,7 +22,16 @@
       "android": {
         "resourceClass": "medium",
         "buildType": "apk"
-      }
+      },
+      "channel": "preview"
+    },
+    "ios-preview": {
+      "distribution": "internal",
+      "ios": {
+        "resourceClass": "m-medium",
+        "simulator": true
+      },
+      "channel": "ios-preview"
     },
     "production": {
       "ios": {
@@ -29,8 +39,9 @@
       },
       "android": {
         "resourceClass": "medium",
-        "buildType": "aab"
-      }
+        "buildType": "apk"
+      },
+      "channel": "production"
     }
   },
   "submit": {

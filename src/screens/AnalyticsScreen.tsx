@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Alert, ActivityIndicator } from 'react-native';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
+import { apiService } from '../services/api';
 
 export const AnalyticsScreen: React.FC = () => {
   const [analyticsData, setAnalyticsData] = useState({
@@ -25,19 +26,41 @@ export const AnalyticsScreen: React.FC = () => {
   const loadAnalyticsData = async () => {
     setLoading(true);
     try {
-      // TODO: Load real analytics data from backend
-      // Mock data for now
-      setAnalyticsData({
-        totalTransactions: 45,
-        totalAmount: 125000,
-        monthlySpending: 35000,
-        referralEarnings: 8500,
-        tipsReceived: 3200,
-        tipsSent: 1800,
-        loginCount: 23,
-        lastLogin: new Date(),
-      });
+      const response = await apiService.getAnalyticsDashboard();
+
+      if (response.success && response.data) {
+        const dashboard = response.data;
+
+        // Transform the API response to match the component's data structure
+        // Set tipsReceived and tipsSent from recentActivity if available
+        let tipsReceived = 0;
+        let tipsSent = 0;
+
+        if (dashboard.summary.recentActivity) {
+          dashboard.summary.recentActivity.forEach(activity => {
+            if (activity.type === 'tip_received') {
+              tipsReceived += activity.amount || 0;
+            } else if (activity.type === 'tip_sent') {
+              tipsSent += activity.amount || 0;
+            }
+          });
+        }
+
+        setAnalyticsData({
+          totalTransactions: dashboard.summary.thisMonth.transactions || 0,
+          totalAmount: dashboard.wallet.balance || 0,
+          monthlySpending: dashboard.summary.thisMonth.spending || 0,
+          referralEarnings: dashboard.referrals.totalEarnings || 0,
+          tipsReceived: tipsReceived,
+          tipsSent: tipsSent,
+          loginCount: 0, // Login count not provided in dashboard API
+          lastLogin: null, // Last login not provided in dashboard API
+        });
+      } else {
+        Alert.alert('Error', 'Failed to load analytics data');
+      }
     } catch (error) {
+      console.error('Error loading analytics data:', error);
       Alert.alert('Error', 'Failed to load analytics data');
     } finally {
       setLoading(false);
@@ -87,6 +110,14 @@ export const AnalyticsScreen: React.FC = () => {
           <Text style={styles.title}>Analytics</Text>
           <Text style={styles.subtitle}>Your financial insights</Text>
         </View>
+
+        {/* Loading Indicator */}
+        {loading && (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#4B0082" />
+            <Text style={styles.loadingText}>Loading analytics...</Text>
+          </View>
+        )}
 
         {/* Time Range Selector */}
         <Card style={styles.selectorCard} padding={16} margin={16}>
@@ -437,5 +468,14 @@ const styles = StyleSheet.create({
     color: '#8e8e93',
     textAlign: 'center',
     lineHeight: 18,
+  },
+  loadingContainer: {
+    alignItems: 'center',
+    paddingVertical: 50,
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: '#8e8e93',
   },
 });

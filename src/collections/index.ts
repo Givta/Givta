@@ -1,4 +1,4 @@
-// Database Collections for Givta App
+ // Database Collections for Givta App
 // These files define the complete Firestore database schema
 
 export { userCollection, UserCollection } from './users';
@@ -25,6 +25,36 @@ export type { KYC } from './kyc';
 export { whatsappSessionCollection, WhatsAppSessionCollection } from './whatsappSessions';
 export type { WhatsAppSession } from './whatsappSessions';
 
+export { FeedbackCollection } from './feedback';
+export type { Feedback } from './feedback';
+
+export { ExternalTipsCollection } from './externalTips';
+export type { ExternalTip } from './externalTips';
+
+export { TipLinksCollection } from './tipLinks';
+export type { TipLink } from './tipLinks';
+
+export { TwoFactorSetupCollection } from './twoFactorSetup';
+export type { TwoFactorSetup } from './twoFactorSetup';
+
+export { TwoFactorBackupCodesCollection } from './twoFactorBackupCodes';
+export type { TwoFactorBackupCode } from './twoFactorBackupCodes';
+
+// Challenge collections
+export {
+  ChallengesCollection,
+  ChallengeTipsCollection
+} from './challenges';
+export type {
+  ChallengeType,
+  Challenge,
+  ChallengeParticipant,
+  ChallengeTip
+} from './challenges';
+
+export { WebhookLogsCollection } from './webhookLogs';
+export type { WebhookLog } from './webhookLogs';
+
 // Database Schema Overview:
 //
 // 1. users - User profiles and authentication data
@@ -35,6 +65,12 @@ export type { WhatsAppSession } from './whatsappSessions';
 // 6. tips - Tipping system with fee calculations
 // 7. kyc - KYC document uploads and verification
 // 8. whatsapp_sessions - WhatsApp bot session management
+// 9. feedback - User feedback and ratings system
+// 10. externalTips - Public tipping transactions
+// 11. tipLinks - Shareable tip link management
+// 12. twoFactorSetup - 2FA configuration and management
+// 13. twoFactorBackupCodes - 2FA backup codes storage
+// 14. webhookLogs - Payment webhook processing logs
 //
 // Key Features:
 // - Full TypeScript support with proper interfaces

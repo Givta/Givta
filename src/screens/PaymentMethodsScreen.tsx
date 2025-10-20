@@ -187,7 +187,7 @@ export const PaymentMethodsScreen: React.FC = () => {
           </Text>
           <Button
             title="Contact Support"
-            onPress={() => Alert.alert('Support', 'Contact our support team at support@givta.com')}
+            onPress={() => Alert.alert('Support', 'Contact our support team at support@givta.app, givtamanager@gmail.com')}
             variant="outline"
             size="small"
           />

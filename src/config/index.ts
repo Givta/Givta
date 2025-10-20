@@ -91,8 +91,8 @@ const defaultConfig: AppConfig = {
     // IMPORTANT: For mobile development, 'localhost' will not work.
     // You must use your computer's local network IP address.
     // Set this in your .env file using EXPO_PUBLIC_API_BASE_URL.
-    baseURL: 'http://localhost:3000/api',
-    backendURL: 'http://localhost:3000',
+    baseURL: 'http://localhost:5000/api',
+    backendURL: 'http://localhost:5000',
     
     timeout: 15000,
   },
@@ -100,8 +100,8 @@ const defaultConfig: AppConfig = {
     name: 'Givta',
     version: '1.0.0',
     environment: 'development',
-    supportEmail: 'support@givta.com',
-    whatsappNumber: '+2341234567890',
+    supportEmail: 'support@givta.app, givtamanager@gmail.com',
+    whatsappNumber: '+234 813 927 0820',
   },
   features: {
     analytics: true,

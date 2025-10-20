@@ -25,11 +25,14 @@ export const PrivacyPolicyScreen: React.FC = () => {
         <Card style={styles.card} padding={20} margin={16}>
           <Text style={styles.sectionTitle}>2. Information We Collect</Text>
           <Text style={styles.paragraph}>
-            • Personal Information: Name, email, phone number, date of birth{'\n'}
-            • Financial Information: Bank details, transaction history, wallet balance{'\n'}
-            • Device Information: Device type, operating system, app version{'\n'}
-            • Usage Data: How you interact with our app and services{'\n'}
-            • Location Data: Approximate location for fraud prevention
+            We collect information you provide directly and automatically when using Givta:{'\n'}
+            • Personal Information: Full name, email address, phone number, username, referral code, date of birth{'\n'}
+            • Financial Information: Bank account details, BVN, transaction history, wallet balance, KYC documents{'\n'}
+            • Device & Technical Data: Device model, operating system, app version, IP address, Firebase tokens{'\n'}
+            • Usage Analytics: Tipping patterns, money transfer activity, feature usage, session duration{'\n'}
+            • Location Data: Approximate location for fraud prevention and regional service availability{'\n'}
+            • Communication Data: Customer support interactions, feedback submissions{'\n'}
+            • Biometric Data: Fingerprint or facial recognition data (stored securely on device only)
           </Text>
         </Card>
 
@@ -37,12 +40,15 @@ export const PrivacyPolicyScreen: React.FC = () => {
         <Card style={styles.card} padding={20} margin={16}>
           <Text style={styles.sectionTitle}>3. How We Use Your Information</Text>
           <Text style={styles.paragraph}>
-            • Process transactions and maintain your account{'\n'}
-            • Provide customer support and respond to inquiries{'\n'}
-            • Send important service updates and notifications{'\n'}
-            • Improve our services and develop new features{'\n'}
-            • Comply with legal obligations and prevent fraud{'\n'}
-            • Personalize your experience and provide relevant content
+            We use your information for the following purposes:{'\n'}
+            • Transaction Processing: Execute money transfers, tips, deposits, withdrawals, and wallet operations{'\n'}
+            • Account Management: Create and maintain user accounts, process KYC verification, manage security settings{'\n'}
+            • Customer Support: Respond to inquiries, resolve disputes, provide technical assistance{'\n'}
+            • Communications: Send transaction confirmations, security alerts, service updates, and marketing materials{'\n'}
+            • Fraud Prevention: Analyze transaction patterns, detect suspicious activities, comply with anti-money laundering regulations{'\n'}
+            • Analytics: Generate insights into user behavior, improve app performance, develop new features{'\n'}
+            • Referral Program: Track referral relationships, calculate bonuses, process reward payments{'\n'}
+            • Legal Compliance: Meet regulatory requirements, respond to legal requests, enforce our terms of service
           </Text>
         </Card>
 
@@ -132,10 +138,10 @@ export const PrivacyPolicyScreen: React.FC = () => {
           <Text style={styles.sectionTitle}>11. Contact Us</Text>
           <Text style={styles.paragraph}>
             If you have any questions about this Privacy Policy or our data practices, please contact us:{'\n'}
-            Email: privacy@givta.com{'\n'}
-            Phone: +234 123 456 7890{'\n'}
+            Email: privacy@givta.app{'\n'}
+            Phone: +234 813 927 0820{'\n'}
             Address: Lagos, Nigeria{'\n'}
-            Data Protection Officer: dpo@givta.com
+            Data Protection Officer: dpo@givta.app
           </Text>
         </Card>
 
@@ -143,7 +149,7 @@ export const PrivacyPolicyScreen: React.FC = () => {
         <Card style={styles.highlightCard} padding={20} margin={16}>
           <Text style={styles.highlightTitle}>📋 Exercise Your Data Rights</Text>
           <Text style={styles.highlightText}>
-            To exercise any of your data protection rights, please contact our Data Protection Officer at dpo@givta.com with your request. We will respond within 30 days.
+            To exercise any of your data protection rights, please contact our Data Protection Officer at dpo@givta.app with your request. We will respond within 30 days.
           </Text>
         </Card>
 

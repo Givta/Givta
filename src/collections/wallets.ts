@@ -35,12 +35,18 @@ export class WalletCollection {
       updatedAt: now,
     };
 
-    await setDoc(walletRef, {
+    const docData: any = {
       ...wallet,
       createdAt: wallet.createdAt.toISOString(),
       updatedAt: wallet.updatedAt.toISOString(),
-      lastTransactionAt: wallet.lastTransactionAt?.toISOString(),
-    });
+    };
+
+    // Only include lastTransactionAt if it exists
+    if (wallet.lastTransactionAt) {
+      docData.lastTransactionAt = wallet.lastTransactionAt.toISOString();
+    }
+
+    await setDoc(walletRef, docData);
 
     return wallet;
   }

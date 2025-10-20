@@ -52,22 +52,38 @@ export const ProfileScreen: React.FC = () => {
     }).format(amount);
   };
 
-  const getUserInitials = (email: string) => {
-    return email.substring(0, 2).toUpperCase();
+  const getUserInitials = (displayName: string) => {
+    if (!displayName || displayName.length < 2) return 'GU'; // Givta User
+    return displayName.substring(0, 2).toUpperCase();
   };
 
-  const getAccountStatus = () => {
-    // TODO: Get actual account status from backend
-    return 'Active';
+  const getAccountStatusColor = () => {
+    if (!user) return '#8e8e93';
+    switch (user.kycStatus) {
+      case 'verified': return '#34c759';
+      case 'pending': return '#ff9500';
+      case 'rejected': return '#ff3b30';
+      default: return user.isActive ? '#34c759' : '#ff3b30';
+    }
+  };
+
+  const getAccountStatusText = () => {
+    if (!user) return 'Unknown';
+    if (!user.isActive) return 'Inactive';
+
+    switch (user.kycStatus) {
+      case 'verified': return 'Verified';
+      case 'pending': return 'KYC Pending';
+      case 'rejected': return 'KYC Rejected';
+      case 'not_submitted': return 'Active';
+      default: return user.isActive ? 'Active' : 'Inactive';
+    }
   };
 
   const getMemberSince = () => {
-    if (!user?.metadata?.creationTime) return 'Recently';
-    const creationDate = new Date(user.metadata.creationTime);
-    return new Intl.DateTimeFormat('en-NG', {
-      month: 'long',
-      year: 'numeric',
-    }).format(creationDate);
+    // TODO: Add createdAt to AuthUser interface if needed
+    // For now, use current date fallback
+    return 'Recently';
   };
 
   if (!user) {
@@ -86,12 +102,12 @@ export const ProfileScreen: React.FC = () => {
           <View style={styles.profileHeader}>
             <View style={styles.avatar}>
               <Text style={styles.avatarText}>
-                {getUserInitials(user.email || 'U')}
+                {getUserInitials(user.username || user.email || 'GU')}
               </Text>
             </View>
             <View style={styles.profileInfo}>
               <Text style={styles.userName}>
-                {user.displayName || 'Givta User'}
+                @{user.username || 'Givta User'}
               </Text>
               <Text style={styles.userEmail}>{user.email}</Text>
               <Text style={styles.memberSince}>
@@ -112,8 +128,21 @@ export const ProfileScreen: React.FC = () => {
             </View>
             <View style={styles.overviewItem}>
               <Text style={styles.overviewLabel}>Account Status</Text>
-              <Text style={[styles.overviewValue, styles.statusValue]}>
-                {getAccountStatus()}
+              <Text style={[styles.overviewValue, { color: getAccountStatusColor() }]}>
+                {getAccountStatusText()}
+              </Text>
+            </View>
+          </View>
+
+          <View style={styles.overviewRow}>
+            <View style={styles.overviewItem}>
+              <Text style={styles.overviewLabel}>Referral Code</Text>
+              <Text style={styles.overviewValue}>{user.referralCode}</Text>
+            </View>
+            <View style={styles.overviewItem}>
+              <Text style={styles.overviewLabel}>KYC Status</Text>
+              <Text style={[styles.overviewValue, { color: getAccountStatusColor() }]}>
+                {user.kycStatus === 'not_submitted' ? 'Not Submitted' : user.kycStatus?.toUpperCase()}
               </Text>
             </View>
           </View>
@@ -163,17 +192,6 @@ export const ProfileScreen: React.FC = () => {
           <Text style={styles.sectionTitle}>Account Settings</Text>
 
           <View style={styles.settingsList}>
-            <TouchableOpacity
-              style={styles.settingItem}
-              onPress={() => navigation.navigate('EditProfile' as never)}
-            >
-              <View style={styles.settingLeft}>
-                <Ionicons name="person-outline" size={20} color="#4B0082" />
-                <Text style={styles.settingText}>Edit Profile</Text>
-              </View>
-              <Ionicons name="chevron-forward" size={20} color="#8e8e93" />
-            </TouchableOpacity>
-
             <TouchableOpacity
               style={styles.settingItem}
               onPress={() => navigation.navigate('AppPreferences' as never)}
@@ -299,6 +317,7 @@ const styles = StyleSheet.create({
   overviewRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    marginBottom: 16,
   },
   overviewItem: {
     flex: 1,

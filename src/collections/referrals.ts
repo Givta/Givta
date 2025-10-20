@@ -35,12 +35,19 @@ export class ReferralCollection {
       updatedAt: now,
     };
 
-    await setDoc(referralRef, {
+    // Prepare document data, excluding undefined fields
+    const docData: any = {
       ...referral,
       createdAt: referral.createdAt.toISOString(),
       updatedAt: referral.updatedAt.toISOString(),
-      completedAt: referral.completedAt?.toISOString(),
-    });
+    };
+
+    // Only include completedAt if it exists
+    if (referral.completedAt) {
+      docData.completedAt = referral.completedAt.toISOString();
+    }
+
+    await setDoc(referralRef, docData);
 
     return referral;
   }

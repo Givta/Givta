@@ -152,9 +152,13 @@ export const ChatBotScreen: React.FC = () => {
       await awardPoints(5, 'Chatbot interaction');
 
       if (userInput.includes('balance') || userInput.includes('wallet')) {
+        console.log(`🔍 ChatBot - Getting user balance for user:`, user ? user.id : 'null');
+
         // Get real balance from backend
         await refreshBalance();
         const currentBalance = balance;
+
+        console.log(`✅ ChatBot - Current balance: ₦${currentBalance}`);
 
         botResponse = {
           id: Date.now().toString(),
@@ -182,20 +186,38 @@ export const ChatBotScreen: React.FC = () => {
           ],
         };
       } else if (userInput.includes('referral') || userInput.includes('code')) {
-        // Get real referral data from backend
+        console.log(`🔍 ChatBot - Getting referral data for user:`, user ? user.id : 'null');
+        console.log(`🔍 ChatBot - User referral code from context:`, user?.referralCode);
+
+        // Use referral code from user context (matches ReferralScreen logic)
+        const referralCode = user?.referralCode || 'ABC123';
+        console.log(`✅ ChatBot - Final referral code: ${referralCode}`);
+
+        // Try to get referral stats from API
+        let totalEarnings = 0;
+        let totalReferrals = 0;
+        let levelStats: any[] = [];
+
         const referralResponse = await apiService.getReferralStats();
-        let referralStats = { totalEarnings: 0, totalReferrals: 0, levelStats: [] as any[] };
-
         if (referralResponse.success && referralResponse.data) {
-          referralStats = referralResponse.data;
-        }
+          const stats = referralResponse.data;
+          totalEarnings = stats.totalEarnings || 0;
+          totalReferrals = stats.totalReferrals || 0;
 
-        const codeResponse = await apiService.getReferralCode();
-        const referralCode = codeResponse.success && codeResponse.data ? codeResponse.data.code : user?.uid.substring(0, 8).toUpperCase() || 'ABC123';
+          // Calculate total referrals from level stats if not provided
+          if (totalReferrals === 0 && stats.levelStats) {
+            totalReferrals = stats.levelStats.reduce((sum: number, level: any) => sum + (level.count || 0), 0);
+          }
+
+          levelStats = stats.levelStats || [];
+          console.log(`✅ ChatBot - Referral stats loaded: earnings=${totalEarnings}, referrals=${totalReferrals}`);
+        } else {
+          console.log(`❌ ChatBot - Failed to get referral stats:`, referralResponse);
+        }
 
         botResponse = {
           id: Date.now().toString(),
-          text: `👥 Your Referral Program Stats:\n\n📊 **Total Earnings:** ${formatCurrency(referralStats.totalEarnings)}\n👤 **Total Referrals:** ${referralStats.totalReferrals}\n🔗 **Your Code:** ${referralCode}\n\n🎯 **Bonus Structure:**\n• Level 1: ₦100 (Friend joins)\n• Level 2: ₦50 (Friend becomes active)\n• Level 3: ₦25 (Long-term engagement)\n\nShare your code to start earning!`,
+          text: `👥 Your Referral Program Stats:\n\n📊 **Total Earnings:** ${formatCurrency(totalEarnings)}\n👤 **Total Referrals:** ${totalReferrals}\n🔗 **Your Code:** ${referralCode}\n\n🎯 **Bonus Structure:**\n• Level 1: ₦100 (Friend joins)\n• Level 2: ₦50 (Friend becomes active)\n• Level 3: ₦25 (Long-term engagement)\n\nShare your code to start earning!`,
           isUser: false,
           timestamp: new Date(),
           type: 'quick_reply',
@@ -207,7 +229,7 @@ export const ChatBotScreen: React.FC = () => {
         };
       } else if (userInput.includes('transaction') || userInput.includes('history')) {
         // Get real transaction data from backend
-        const transactionsResponse = await apiService.getTransactions(user?.uid || '', 5);
+        const transactionsResponse = await apiService.getTransactions(5);
         let recentTransactions: any[] = [];
 
         if (transactionsResponse.success && transactionsResponse.data) {
@@ -243,7 +265,7 @@ export const ChatBotScreen: React.FC = () => {
 
         botResponse = {
           id: Date.now().toString(),
-          text: `💸 **Withdrawal Information:**\n\n📊 **Current Balance:** ${formatCurrency(balance)}\n💰 **Minimum Withdrawal:** ${formatCurrency(minWithdrawal)}\n📋 **Processing Fee:** 4% of withdrawal amount\n⏱️ **Processing Time:** 1-3 business days\n\n${canWithdraw ? '✅ You can withdraw funds now!' : '❌ Your balance is below the minimum withdrawal amount.'}`,
+          text: `💸 **Withdrawal Information:**\n\n📊 **Current Balance:** ${formatCurrency(balance)}\n💰 **Minimum Withdrawal:** ${formatCurrency(minWithdrawal)}\n📋 **Processing Fee:** 2.3% of withdrawal amount\n⏱️ **Processing Time:** 1-3 business days\n\n${canWithdraw ? '✅ You can withdraw funds now!' : '❌ Your balance is below the minimum withdrawal amount.'}`,
           isUser: false,
           timestamp: new Date(),
           type: 'quick_reply',
@@ -354,7 +376,7 @@ export const ChatBotScreen: React.FC = () => {
       case 'get_code':
         const codeMessage: Message = {
           id: Date.now().toString(),
-          text: `Your referral code is: ${user?.uid.substring(0, 8).toUpperCase() || 'ABC123'}\n\nShare this code with friends to earn bonuses when they join!`,
+          text: `Your referral code is: ${user?.id.substring(0, 8).toUpperCase() || 'ABC123'}\n\nShare this code with friends to earn bonuses when they join!`,
           isUser: false,
           timestamp: new Date(),
         };
@@ -380,6 +402,25 @@ export const ChatBotScreen: React.FC = () => {
           timestamp: new Date(),
         };
         setMessages(prev => [...prev, feeMessage]);
+        break;
+      case 'deposit_funds':
+        // TODO: Navigate to deposit screen
+        const depositMessage: Message = {
+          id: Date.now().toString(),
+          text: 'You can deposit funds in the Wallet tab. Choose your deposit amount and use Paystack for secure payments.',
+          isUser: false,
+          timestamp: new Date(),
+        };
+        setMessages(prev => [...prev, depositMessage]);
+        break;
+      case 'withdraw_earnings':
+        const withdrawMessage: Message = {
+          id: Date.now().toString(),
+          text: 'Minimum withdrawal amount is ₦1,500. Processing takes 1-3 business days. Go to Wallet tab to withdraw.',
+          isUser: false,
+          timestamp: new Date(),
+        };
+        setMessages(prev => [...prev, withdrawMessage]);
         break;
       default:
         handleSendMessage('Help me with ' + action.replace('_', ' '));

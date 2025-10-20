@@ -60,8 +60,8 @@ export class TipCollection {
       return {
         ...data,
         id: tipSnap.id,
-        createdAt: new Date(data.createdAt),
-        updatedAt: new Date(data.updatedAt),
+        createdAt: data.createdAt ? new Date(data.createdAt) : new Date(),
+        updatedAt: data.updatedAt ? new Date(data.updatedAt) : new Date(),
         completedAt: data.completedAt ? new Date(data.completedAt) : undefined,
       } as Tip;
     }
@@ -84,8 +84,8 @@ export class TipCollection {
       return {
         ...data,
         id: doc.id,
-        createdAt: new Date(data.createdAt),
-        updatedAt: new Date(data.updatedAt),
+        createdAt: data.createdAt ? new Date(data.createdAt) : new Date(),
+        updatedAt: data.updatedAt ? new Date(data.updatedAt) : new Date(),
         completedAt: data.completedAt ? new Date(data.completedAt) : undefined,
       } as Tip;
     });
@@ -106,8 +106,8 @@ export class TipCollection {
       return {
         ...data,
         id: doc.id,
-        createdAt: new Date(data.createdAt),
-        updatedAt: new Date(data.updatedAt),
+        createdAt: data.createdAt ? new Date(data.createdAt) : new Date(),
+        updatedAt: data.updatedAt ? new Date(data.updatedAt) : new Date(),
         completedAt: data.completedAt ? new Date(data.completedAt) : undefined,
       } as Tip;
     });
@@ -138,8 +138,8 @@ export class TipCollection {
       return {
         ...data,
         id: doc.id,
-        createdAt: new Date(data.createdAt),
-        updatedAt: new Date(data.updatedAt),
+        createdAt: data.createdAt ? new Date(data.createdAt) : new Date(),
+        updatedAt: data.updatedAt ? new Date(data.updatedAt) : new Date(),
         completedAt: data.completedAt ? new Date(data.completedAt) : undefined,
       } as Tip;
     });
@@ -149,8 +149,8 @@ export class TipCollection {
       return {
         ...data,
         id: doc.id,
-        createdAt: new Date(data.createdAt),
-        updatedAt: new Date(data.updatedAt),
+        createdAt: data.createdAt ? new Date(data.createdAt) : new Date(),
+        updatedAt: data.updatedAt ? new Date(data.updatedAt) : new Date(),
         completedAt: data.completedAt ? new Date(data.completedAt) : undefined,
       } as Tip;
     });
@@ -176,8 +176,8 @@ export class TipCollection {
       return {
         ...data,
         id: doc.id,
-        createdAt: new Date(data.createdAt),
-        updatedAt: new Date(data.updatedAt),
+        createdAt: data.createdAt ? new Date(data.createdAt) : new Date(),
+        updatedAt: data.updatedAt ? new Date(data.updatedAt) : new Date(),
         completedAt: data.completedAt ? new Date(data.completedAt) : undefined,
       } as Tip;
     });
@@ -228,7 +228,11 @@ export class TipCollection {
     amount: number,
     description: string,
     isAnonymous = false,
-    paymentMethod = 'wallet'
+    paymentMethod = 'wallet',
+    senderMetadata?: {
+      senderName?: string;
+      senderEmail?: string;
+    }
   ): Promise<Tip> {
     const { fee, netAmount } = this.calculateFee(amount);
 
@@ -243,6 +247,10 @@ export class TipCollection {
       currency: 'NGN',
       fee,
       netAmount,
+      metadata: senderMetadata ? {
+        senderName: senderMetadata.senderName,
+        senderEmail: senderMetadata.senderEmail,
+      } : undefined,
     });
   }
 
@@ -309,8 +317,8 @@ export class TipCollection {
       return {
         ...data,
         id: doc.id,
-        createdAt: new Date(data.createdAt),
-        updatedAt: new Date(data.updatedAt),
+        createdAt: data.createdAt ? new Date(data.createdAt) : new Date(),
+        updatedAt: data.updatedAt ? new Date(data.updatedAt) : new Date(),
         completedAt: data.completedAt ? new Date(data.completedAt) : undefined,
       } as Tip;
     });
@@ -341,8 +349,8 @@ export class TipCollection {
       return {
         ...data,
         id: doc.id,
-        createdAt: new Date(data.createdAt),
-        updatedAt: new Date(data.updatedAt),
+        createdAt: data.createdAt ? new Date(data.createdAt) : new Date(),
+        updatedAt: data.updatedAt ? new Date(data.updatedAt) : new Date(),
         completedAt: data.completedAt ? new Date(data.completedAt) : undefined,
       } as Tip;
     });
@@ -363,8 +371,8 @@ export class TipCollection {
       return {
         ...data,
         id: doc.id,
-        createdAt: new Date(data.createdAt),
-        updatedAt: new Date(data.updatedAt),
+        createdAt: data.createdAt ? new Date(data.createdAt) : new Date(),
+        updatedAt: data.updatedAt ? new Date(data.updatedAt) : new Date(),
         completedAt: data.completedAt ? new Date(data.completedAt) : undefined,
       } as Tip;
     });

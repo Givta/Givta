@@ -11,7 +11,6 @@ export const AppPreferencesScreen: React.FC = () => {
     notifications: true,
     hapticFeedback: true,
     autoLock: true,
-    biometricAuth: false,
     dataSaver: false,
   });
 
@@ -54,7 +53,7 @@ export const AppPreferencesScreen: React.FC = () => {
               notifications: true,
               hapticFeedback: true,
               autoLock: true,
-              biometricAuth: false,
+              
               dataSaver: false,
             });
             Alert.alert('Success', 'Preferences reset to defaults');
@@ -187,20 +186,7 @@ export const AppPreferencesScreen: React.FC = () => {
             />
           </View>
 
-          <View style={styles.settingRow}>
-            <View style={styles.settingInfo}>
-              <Text style={styles.settingTitle}>Biometric Authentication</Text>
-              <Text style={styles.settingDescription}>
-                Use fingerprint or face ID for quick access
-              </Text>
-            </View>
-            <Switch
-              value={preferences.biometricAuth}
-              onValueChange={(value) => updatePreference('biometricAuth', value)}
-              trackColor={{ false: '#8e8e93', true: '#34c759' }}
-              thumbColor={preferences.biometricAuth ? '#fff' : '#f4f3f4'}
-            />
-          </View>
+
         </Card>
 
         {/* Data & Storage */}

@@ -1,5 +1,6 @@
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
+import * as Linking from 'expo-linking';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
 import { View, Text, SafeAreaView, Platform } from 'react-native';
@@ -12,6 +13,10 @@ import { ReferralScreen } from '../screens/ReferralScreen';
 import { ProfileScreen } from '../screens/ProfileScreen';
 import { ChatBotScreen } from '../screens/ChatBotScreen';
 import { PaymentScreen } from '../screens/PaymentScreen';
+
+import { FeedbackScreen } from '../screens/FeedbackScreen';
+import { ExternalTipScreen } from '../screens/ExternalTipScreen';
+
 import { EditProfileScreen } from '../screens/EditProfileScreen';
 import { AppPreferencesScreen } from '../screens/AppPreferencesScreen';
 import { TermsOfServiceScreen } from '../screens/TermsOfServiceScreen';
@@ -19,10 +24,36 @@ import { PrivacyPolicyScreen } from '../screens/PrivacyPolicyScreen';
 import { HelpSupportScreen } from '../screens/HelpSupportScreen';
 import { SecurityScreen } from '../screens/SecurityScreen';
 import { AnalyticsScreen } from '../screens/AnalyticsScreen';
+import { NotificationsScreen } from '../screens/NotificationsScreen';
+
 import AuthNavigator from './AuthNavigator';
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
+
+// Configure deep linking prefixes for full app functionality
+const linking = {
+  prefixes: [Linking.createURL('/'), 'givta://', 'https://givta.app', 'https://www.givta.app'],
+  config: {
+    screens: {
+      Auth: 'auth',
+
+      // Main app screens
+      MainTabs: 'main',
+
+      // Stack screens
+      Payment: 'payment',
+      EditProfile: 'edit-profile',
+      Security: 'security',
+      Analytics: 'analytics',
+      Notifications: 'notifications',
+
+      // External tipping screens - Fixed naming consistency
+      ExternalTip: 'tip-link/:tipLinkId',
+      PublicTip: 'public-tip/:tipLinkId',
+    },
+  },
+};
 
 const TabNavigator: React.FC = () => {
   const insets = useSafeAreaInsets();
@@ -53,7 +84,7 @@ const TabNavigator: React.FC = () => {
         name="Wallet"
         component={WalletScreen}
         options={{
-          tabBarLabel: 'Wallet',
+          headerShown: false,
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="wallet-outline" size={size} color={color} />
           ),
@@ -70,35 +101,36 @@ const TabNavigator: React.FC = () => {
         }}
       />
       <Tab.Screen
-        name="ChatBot"
-        component={ChatBotScreen}
+        name="Feedback"
+        component={FeedbackScreen}
         options={{
-          tabBarLabel: 'ChatBot',
+          tabBarLabel: 'Feedback',
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="chatbubble-ellipses-outline" size={size} color={color} />
           ),
         }}
       />
-      <Tab.Screen
-        name="Referral"
-        component={ReferralScreen}
-        options={{
-          tabBarLabel: 'Referral',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="people-outline" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tab.Screen
-        name="Profile"
-        component={ProfileScreen}
-        options={{
-          tabBarLabel: 'Profile',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="person-outline" size={size} color={color} />
-          ),
-        }}
-      />
+  <Tab.Screen
+    name="Referral"
+    component={ReferralScreen}
+    options={{
+      tabBarLabel: 'Referral',
+      tabBarIcon: ({ color, size }) => (
+        <Ionicons name="people-outline" size={size} color={color} />
+      ),
+    }}
+  />
+
+  <Tab.Screen
+    name="Profile"
+    component={ProfileScreen}
+    options={{
+      tabBarLabel: 'Profile',
+      tabBarIcon: ({ color, size }) => (
+        <Ionicons name="person-outline" size={size} color={color} />
+      ),
+    }}
+  />
     </Tab.Navigator>
   );
 };
@@ -178,6 +210,28 @@ const MainStack: React.FC = () => {
           title: 'Help & Support',
         }}
       />
+      <Stack.Screen
+        name="Notifications"
+        component={NotificationsScreen}
+        options={{
+          title: 'Notifications',
+        }}
+      />
+      <Stack.Screen
+        name="ExternalTip"
+        component={ExternalTipScreen}
+        options={{
+          title: 'Send Tip',
+        }}
+      />
+      <Stack.Screen
+        name="PublicTip"
+        component={ExternalTipScreen}
+        options={{
+          title: 'Send Public Tip',
+        }}
+      />
+
     </Stack.Navigator>
   );
 };
@@ -195,7 +249,7 @@ export const AppNavigator: React.FC = () => {
 
   return (
     <SafeAreaProvider>
-      <NavigationContainer>
+      <NavigationContainer linking={linking}>
         {user ? <MainStack /> : <AuthNavigator />}
       </NavigationContainer>
     </SafeAreaProvider>

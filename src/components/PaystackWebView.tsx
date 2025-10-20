@@ -9,6 +9,7 @@ import { paystackService } from '../services/paystack';
 
 interface PaystackWebViewProps {
   amount: number;
+  paymentUrl?: string;
   onSuccess: (response: any) => void;
   onCancel: () => void;
   reference?: string;
@@ -16,47 +17,25 @@ interface PaystackWebViewProps {
 
 export const PaystackWebView: React.FC<PaystackWebViewProps> = ({
   amount,
+  paymentUrl: initialPaymentUrl,
   onSuccess,
   onCancel,
   reference,
 }) => {
   const navigation = useNavigation();
-  const { user } = useAuth();
-  const { deposit } = useWallet();
   const webViewRef = useRef<WebView>(null);
   const [loading, setLoading] = useState(true);
-  const [paymentUrl, setPaymentUrl] = useState<string>('');
+  const [paymentUrl, setPaymentUrl] = useState<string>(initialPaymentUrl || '');
 
   React.useEffect(() => {
-    initializePayment();
-  }, []);
-
-  const initializePayment = async () => {
-    try {
-      if (!user?.email) {
-        Alert.alert('Error', 'User email not found');
-        onCancel();
-        return;
-      }
-
-      // Initialize payment with Paystack
-      const response = await apiService.initializePaystackPayment(
-        paystackService.formatAmount(amount),
-        user.email
-      );
-
-      if (response.success && response.data) {
-        setPaymentUrl(response.data.authorization_url);
-      } else {
-        Alert.alert('Error', 'Failed to initialize payment');
-        onCancel();
-      }
-    } catch (error) {
-      console.error('Payment initialization error:', error);
-      Alert.alert('Error', 'Failed to initialize payment');
+    if (!initialPaymentUrl) {
+      Alert.alert('Error', 'Payment URL is required');
       onCancel();
+      return;
     }
-  };
+
+    setPaymentUrl(initialPaymentUrl);
+  }, [initialPaymentUrl]);
 
   const handleNavigationStateChange = async (navState: any) => {
     const { url } = navState;
@@ -73,18 +52,19 @@ export const PaystackWebView: React.FC<PaystackWebViewProps> = ({
           const verifyResponse = await apiService.verifyPaystackPayment(paymentRef);
 
           if (verifyResponse.success) {
-            // Update wallet balance
-            await deposit(amount);
+            // Payment was successful - wallet should be credited via webhook
+            // The webhook will handle the actual crediting, we just need to refresh the balance
+            // Note: We don't call deposit() here to avoid double-crediting
             Alert.alert('Success', 'Payment successful! Your wallet has been credited.');
             onSuccess({ transactionRef: paymentRef });
           } else {
-            Alert.alert('Error', 'Payment verification failed');
+            Alert.alert('Error', 'Payment verification failed. Please contact support if you were charged.');
             onCancel();
           }
         }
       } catch (error) {
         console.error('Payment verification error:', error);
-        Alert.alert('Error', 'Payment verification failed');
+        Alert.alert('Error', 'Payment verification failed. Please contact support if you were charged.');
         onCancel();
       }
     }
@@ -97,6 +77,39 @@ export const PaystackWebView: React.FC<PaystackWebViewProps> = ({
 
   const handleError = (error: any) => {
     console.error('WebView error:', error);
+
+    // If WebView fails, fall back to opening in external browser
+    if (paymentUrl) {
+      Alert.alert(
+        'WebView Issue',
+        'Opening payment in your browser instead.',
+        [
+          {
+            text: 'Cancel',
+            onPress: onCancel,
+            style: 'cancel'
+          },
+          {
+            text: 'Open Browser',
+            onPress: () => {
+              const Linking = require('react-native').Linking;
+              Linking.openURL(paymentUrl).then(() => {
+                Alert.alert(
+                  'Payment Opened',
+                  'Complete your payment in the browser and return to the app.',
+                  [{ text: 'OK', onPress: () => onCancel() }]
+                );
+              }).catch(() => {
+                Alert.alert('Error', 'Could not open payment link. Please try again later.');
+                onCancel();
+              });
+            }
+          }
+        ]
+      );
+      return;
+    }
+
     Alert.alert('Error', 'Payment failed. Please try again.');
     onCancel();
   };

@@ -1,101 +1,103 @@
 import React, { useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, View, Alert } from 'react-native';
-import { messaging } from './src/firebase';
+import { StyleSheet, View, Alert, Platform } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { AuthProvider } from './src/contexts/AuthContext';
 import { WalletProvider } from './src/contexts/WalletContext';
 import { AppNavigator } from './src/navigation/AppNavigator';
 import { apiService } from './src/services/api';
 
+// Import Expo notifications for easier setup
+import * as Notifications from 'expo-notifications';
+import Constants from 'expo-constants';
+
 export default function App() {
   useEffect(() => {
-    // Initialize notifications if messaging is available
-    if (messaging) {
-      const initializeApp = async () => {
-        try {
-          // Request permission for notifications
-          await requestNotificationPermission();
-        } catch (error) {
-          console.error('❌ Error initializing notifications:', error);
-        }
-      };
+    // Initialize Expo notifications
+    initializeNotifications();
 
-      initializeApp();
+    // Note: setNotificationHandler is optional and varies by Expo SDK version
 
-      // Handle notifications when app is in foreground
-      const unsubscribeOnMessage = messaging.onMessage(async (remoteMessage: any) => {
-        console.log('📱 Foreground notification:', remoteMessage);
-        await displayNotification(remoteMessage);
-      });
+    // Handle notifications received while app is in foreground
+    const subscriptionReceive = Notifications.addNotificationReceivedListener((notification) => {
+      console.log('📱 Foreground notification received:', notification);
+      displayNotification(notification);
+    });
 
-      // Handle notification opened from background/quit state
-      const unsubscribeOnNotificationOpened = messaging.onNotificationOpenedApp((remoteMessage: any) => {
-        console.log('📱 Notification opened from background:', remoteMessage);
-        handleNotificationPress(remoteMessage);
-      });
+    // Handle notifications opened by user
+    const subscriptionResponse = Notifications.addNotificationResponseReceivedListener((response) => {
+      console.log('📱 Notification opened:', response);
+      handleNotificationPress(response);
+    });
 
-      // Handle notification opened from quit state
-      messaging
-        .getInitialNotification()
-        .then((remoteMessage: any) => {
-          if (remoteMessage) {
-            console.log('📱 Notification opened from quit state:', remoteMessage);
-            handleNotificationPress(remoteMessage);
-          }
-        });
-
-      return () => {
-        unsubscribeOnMessage?.();
-        unsubscribeOnNotificationOpened?.();
-      };
-    } else {
-      console.log('📱 Messaging not available in this environment');
-    }
+    // Clean up subscriptions
+    return () => {
+      subscriptionReceive.remove();
+      subscriptionResponse.remove();
+    };
   }, []);
 
-  const requestNotificationPermission = async () => {
+  const initializeNotifications = async () => {
     try {
-      if (!messaging) {
-        console.log('📱 Messaging not available, skipping notification permission');
-        return;
+      // Request permissions for notifications
+      const { status: existingStatus } = await Notifications.getPermissionsAsync();
+      let finalStatus = existingStatus;
+
+      if (existingStatus !== 'granted') {
+        const { status } = await Notifications.requestPermissionsAsync();
+        finalStatus = status;
       }
 
-      const authStatus = await messaging.requestPermission();
-      const enabled =
-        authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
-        authStatus === messaging.AuthorizationStatus.PROVISIONAL;
-
-      if (enabled) {
-        console.log('✅ Notification permission granted');
-        const token = await messaging.getToken();
-        console.log('📱 FCM Token:', token);
-
-        // Send token to backend for push notifications
-        await registerDeviceToken(token);
-      } else {
+      if (finalStatus !== 'granted') {
         console.log('❌ Notification permission denied');
+        return false;
+      }
+
+      console.log('✅ Notification permission granted');
+
+      // Get device token for push notifications
+      if (Constants.isDevice) {
+        const tokenData = await Notifications.getDevicePushTokenAsync();
+        console.log('📱 Device Token:', tokenData);
+
+        if (tokenData) {
+          await registerExpoToken(tokenData.data);
+        }
+      } else {
+        console.log('🖥️ Must use physical device for push notifications');
+      }
+
+      return true;
+    } catch (error) {
+      console.error('❌ Error initializing notifications:', error);
+      return false;
+    }
+  };
+
+  const registerExpoToken = async (token: string) => {
+    try {
+      const resp = await apiService.registerDeviceToken(token, Platform.OS);
+      if (!resp.success) {
+        console.warn('📡 Failed to register device token with backend:', resp.error || resp.message);
+        await AsyncStorage.setItem('deviceRegistered', 'false');
+      } else {
+        console.log('📡 Device token registered with backend');
+        await AsyncStorage.setItem('deviceRegistered', 'true');
+        await AsyncStorage.setItem('deviceToken', token);
       }
     } catch (error) {
-      console.error('❌ Error requesting notification permission:', error);
+      console.error('📡 Error registering device token:', error);
+      try {
+        await AsyncStorage.setItem('deviceRegistered', 'false');
+      } catch {}
     }
   };
 
-  const registerDeviceToken = async (token: string) => {
+  const displayNotification = async (notification: Notifications.Notification) => {
     try {
-      // This will be called when user is authenticated
-      console.log('📱 Device token registered:', token);
-      // Token will be sent to backend when user logs in
-    } catch (error) {
-      console.error('❌ Error registering device token:', error);
-    }
-  };
-
-  const displayNotification = async (remoteMessage: any) => {
-    try {
-      // For now, show an alert for foreground notifications
-      // TODO: Replace with proper notification display using notifee
-      const title = remoteMessage.notification?.title || 'Givta';
-      const body = remoteMessage.notification?.body || 'You have a new notification';
+      // Display notification as Alert for foreground notifications
+      const title = notification.request.content.title || 'Givta';
+      const body = notification.request.content.body || 'You have a new notification';
 
       Alert.alert(title, body, [
         { text: 'OK', style: 'default' }
@@ -107,28 +109,35 @@ export default function App() {
     }
   };
 
-  const handleNotificationPress = (notification: any) => {
+  const handleNotificationPress = (response: Notifications.NotificationResponse) => {
     try {
-      const data = notification?.data || notification?.notification?.data;
+      const data = response.notification.request.content.data;
       if (data) {
         console.log('📱 Handling notification press:', data);
+
+        // Ensure message is a string (handles string | object type)
+        const message = typeof data.message === 'string'
+          ? data.message
+          : (data.message
+             ? JSON.stringify(data.message)
+             : 'You have a new notification');
 
         // Handle different notification types
         switch (data.type) {
           case 'transaction':
             // Navigate to wallet/transactions screen
-            Alert.alert('Transaction Update', data.message || 'Your transaction status has been updated');
+            Alert.alert('Transaction Update', message);
             break;
           case 'tip':
             // Navigate to tips screen
-            Alert.alert('Tip Received!', data.message || 'You received a tip!');
+            Alert.alert('Tip Received!', message);
             break;
           case 'security':
             // Navigate to security/settings
-            Alert.alert('Security Alert', data.message || 'Security event detected');
+            Alert.alert('Security Alert', message);
             break;
           default:
-            Alert.alert('Notification', data.message || 'You have a new notification');
+            Alert.alert('Notification', message);
         }
       }
     } catch (error) {

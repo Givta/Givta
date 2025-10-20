@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,14 +7,17 @@ import {
   Alert,
   ScrollView,
   Modal,
+  TouchableOpacity,
+  FlatList,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { useAuth } from '../contexts/AuthContext';
 import { useWallet } from '../contexts/WalletContext';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
 import { PaystackWebView } from '../components/PaystackWebView';
-import { paystackService } from '../services/paystack';
+import { apiService } from '../services/api';
 
 type PaymentType = 'deposit' | 'withdraw';
 
@@ -26,15 +29,63 @@ export const PaymentScreen: React.FC = () => {
   const navigation = useNavigation();
   const route = useRoute<RouteProp<{ params: PaymentScreenProps }, 'params'>>();
   const { user } = useAuth();
-  const { balance, deposit, withdraw } = useWallet();
+  const { balance, deposit, withdraw, refreshBalance } = useWallet();
 
   const paymentType = route.params?.paymentType || 'deposit';
   const [amount, setAmount] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPaystack, setShowPaystack] = useState(false);
+  const [paymentUrl, setPaymentUrl] = useState<string>('');
+  const [paymentReference, setPaymentReference] = useState<string>('');
+
+  // Withdrawal specific fields
+  const [accountNumber, setAccountNumber] = useState('');
+  const [bankCode, setBankCode] = useState('');
+  const [selectedBank, setSelectedBank] = useState<any>(null);
+  const [accountName, setAccountName] = useState('');
+  const [verifyingAccount, setVerifyingAccount] = useState(false);
+  const [showBankPicker, setShowBankPicker] = useState(false);
+  const [availableBanks, setAvailableBanks] = useState<any[]>([]);
+  const [loadingBanks, setLoadingBanks] = useState(false);
 
   const numAmount = parseFloat(amount) || 0;
   const isDeposit = paymentType === 'deposit';
+
+  // Load banks on component mount for withdrawals
+  useEffect(() => {
+    if (!isDeposit) {
+      loadBanks();
+    }
+  }, [isDeposit]);
+
+  const loadBanks = async () => {
+    try {
+      setLoadingBanks(true);
+
+      const response = await fetch(`${process.env.EXPO_PUBLIC_API_BASE_URL}/payments/banks`, {
+        headers: {
+          'Authorization': `Bearer ${user?.tokens?.accessToken}`,
+        },
+      });
+
+      const data = await response.json();
+
+      if (data.success && data.data) {
+        // Sort banks by name and filter live banks
+        const sortedBanks = data.data
+          .filter((bank: any) => bank.active && !bank.name.includes('Test'))
+          .sort((a: any, b: any) => a.name.localeCompare(b.name));
+
+        setAvailableBanks(sortedBanks);
+      } else {
+        console.error('Failed to load banks:', data.error);
+      }
+    } catch (error) {
+      console.error('Error loading banks:', error);
+    } finally {
+      setLoadingBanks(false);
+    }
+  };
 
   const handlePayment = async () => {
     if (!user) {
@@ -53,46 +104,183 @@ export const PaymentScreen: React.FC = () => {
     }
 
     if (isDeposit) {
-      // Show Paystack WebView for payment
-      setShowPaystack(true);
+      // Initialize deposit payment
+      await handleDeposit();
     } else {
       // Handle withdrawal
       await handleWithdrawal();
     }
   };
 
-  const handleWithdrawal = async () => {
+  const handleDeposit = async () => {
     try {
       setLoading(true);
-      await withdraw(numAmount, {
-        accountNumber: '1234567890', // This should come from user input
-        bankCode: '044', // This should come from user input
-        accountName: 'John Doe', // This should come from user input
+
+      // Call the new deposit endpoint
+      const response = await fetch(`${process.env.EXPO_PUBLIC_API_BASE_URL}/wallets/deposit`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${user?.tokens?.accessToken}`,
+        },
+        body: JSON.stringify({
+          amount: numAmount,
+          paymentMethod: 'paystack'
+        }),
       });
-      Alert.alert('Success', 'Withdrawal request submitted successfully');
-      navigation.goBack();
+
+      const data = await response.json();
+
+      if (data.success) {
+        // Store payment URL and reference
+        setPaymentUrl(data.data.paymentUrl);
+        setPaymentReference(data.data.reference);
+        // Open payment URL in Paystack WebView
+        setShowPaystack(true);
+      } else {
+        throw new Error(data.error || 'Failed to initialize deposit');
+      }
     } catch (error: any) {
-      Alert.alert('Error', error.message || 'Withdrawal failed');
+      Alert.alert('Error', error.message || 'Failed to initialize deposit');
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleWithdrawal = async () => {
+    // Validate withdrawal-specific fields
+    if (!accountNumber.trim() || !bankCode.trim() || !accountName.trim()) {
+      Alert.alert('Error', 'Please verify bank account details first');
+      return;
+    }
+
+    if (accountNumber.length !== 10) {
+      Alert.alert('Error', 'Please enter a valid 10-digit account number');
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      // Calculate fee (2.3% as per wallet route)
+      const fee = Math.round(numAmount * 0.023);
+      const netAmount = numAmount - fee;
+
+      // Submit withdrawal request for admin approval
+      const response = await fetch(`${process.env.EXPO_PUBLIC_API_BASE_URL}/wallets/withdraw`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${user?.tokens?.accessToken}`,
+        },
+        body: JSON.stringify({
+          amount: numAmount,
+          accountNumber: accountNumber.trim(),
+          bankCode: bankCode.trim(),
+          bankName: selectedBank?.name || '',
+          accountName: accountName.trim(),
+          description: 'Withdrawal request from Givta app',
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        Alert.alert(
+          'Withdrawal Requested',
+          `Your withdrawal request has been submitted for review.\n\nAmount: ${formatCurrency(numAmount)}\nFee: ${formatCurrency(fee)}\nYou'll receive: ${formatCurrency(netAmount)}\n\nProcessing may take 1-3 business days.`
+        );
+        navigation.goBack();
+      } else {
+        throw new Error(data.error || 'Withdrawal request failed');
+      }
+    } catch (error: any) {
+      Alert.alert('Error', error.message || 'Failed to submit withdrawal request');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifyAccount = async () => {
+    if (!accountNumber.trim() || accountNumber.length !== 10) {
+      Alert.alert('Error', 'Please enter a valid 10-digit account number');
+      return;
+    }
+
+    if (!bankCode.trim()) {
+      Alert.alert('Error', 'Please select a bank');
+      return;
+    }
+
+    try {
+      setVerifyingAccount(true);
+
+      const result = await apiService.validateBankAccount(accountNumber.trim(), bankCode.trim());
+
+      if (result.success && result.data) {
+        setAccountName(result.data.account_name);
+        Alert.alert('Success', `Account verified: ${result.data.account_name}`);
+      } else {
+        Alert.alert('Error', 'Account verification failed');
+      }
+    } catch (error: any) {
+      Alert.alert('Error', 'Failed to verify account. Please check your details.');
+    } finally {
+      setVerifyingAccount(false);
+    }
+  };
+
+  const getBankName = (code: string) => {
+    const banks: { [key: string]: string } = {
+      '044': 'Access Bank',
+      '063': 'Diamond Bank',
+      '050': 'Ecobank',
+      '011': 'First Bank',
+      '058': 'GTBank',
+      '030': 'Heritage Bank',
+      '069': 'Sterling Bank',
+      '057': 'Zenith Bank',
+      '035': 'Wema Bank',
+      '070': 'Fidelity Bank',
+      '067': 'Unity Bank',
+      '009': 'Key Stone Bank',
+      '231': 'Stanbic IBTC',
+      '068': 'Standard Chartered',
+      '023': 'Citi Bank',
+      '101': 'Providus Bank',
+      '076': 'Polaris Bank',
+      '082': 'Keystone Bank',
+      '084': 'Enterprise Bank',
+      '085': 'Ecobank Nigeria',
+      '221': 'Stanbic IBTC Bank Nigeria Limited',
+      '232': 'Sterling Bank Plc',
+      '301': 'Jaiz Bank',
+      '304': 'Stanbic Mobile',
+      '307': 'Ecobank Mobile',
+      '309': 'FBN Mobile',
+      '315': 'GTBank Mobile Money',
+      '322': 'Zenith Mobile',
+      '323': 'Access Mobile',
+      '401': 'Aso Savings',
+      '305': 'Paycom (OAK)',
+      '100': 'Suntrust Bank',
+      '102': 'Titan Trust Bank',
+    };
+
+    return banks[code] || `Bank Code: ${code}`;
   };
 
   const handlePaystackSuccess = async (response: any) => {
     try {
       setShowPaystack(false);
 
-      // Verify payment on backend
-      const verified = await paystackService.verifyPayment(response.transactionRef);
+      // Refresh balance to show updated amount (webhook should have credited the wallet)
+      await refreshBalance();
 
-      if (verified) {
-        // Update wallet balance
-        await deposit(numAmount);
-        Alert.alert('Success', 'Payment successful! Your wallet has been credited.');
-        navigation.goBack();
-      } else {
-        Alert.alert('Error', 'Payment verification failed. Please contact support.');
-      }
+      // Payment verification is handled in PaystackWebView component
+      // Just show success and navigate back
+      Alert.alert('Success', 'Payment successful! Your wallet has been credited.');
+      navigation.goBack();
     } catch (error) {
       Alert.alert('Error', 'Payment processing failed. Please try again.');
     }
@@ -111,6 +299,21 @@ export const PaymentScreen: React.FC = () => {
   };
 
   const quickAmounts = [1000, 2000, 5000, 10000];
+
+  const handleBankSelect = (bank: any) => {
+    setSelectedBank(bank);
+    setBankCode(bank.code);
+    setShowBankPicker(false);
+  };
+
+  const renderBankItem = ({ item }: { item: any }) => (
+    <TouchableOpacity
+      style={styles.bankItem}
+      onPress={() => handleBankSelect(item)}
+    >
+      <Text style={styles.bankItemText}>{item.name}</Text>
+    </TouchableOpacity>
+  );
 
   return (
     <ScrollView style={styles.container}>
@@ -146,6 +349,51 @@ export const PaymentScreen: React.FC = () => {
             maxLength={10}
           />
 
+          {/* Bank Account Details for Withdrawals */}
+          {!isDeposit && (
+            <View style={styles.withdrawalDetails}>
+              <Text style={styles.withdrawalTitle}>Bank Account Details</Text>
+
+              <Text style={styles.detailLabel}>Account Number</Text>
+              <TextInput
+                style={styles.detailInput}
+                placeholder="1234567890"
+                value={accountNumber}
+                onChangeText={setAccountNumber}
+                keyboardType="numeric"
+                maxLength={10}
+              />
+
+              <Text style={styles.detailLabel}>Select Bank</Text>
+              <TouchableOpacity
+                style={styles.bankSelector}
+                onPress={() => setShowBankPicker(true)}
+              >
+                <Text style={styles.bankSelectorText}>
+                  {selectedBank ? selectedBank.name : 'Choose a bank'}
+                </Text>
+                <Ionicons name="chevron-down" size={20} color="#4B0082" />
+              </TouchableOpacity>
+
+{/* Account Name will auto-fill after verification */}
+{accountName ? (
+  <View>
+    <Text style={styles.detailLabel}>✓ Account Holder</Text>
+    <Text style={styles.verifiedAccountName}>{accountName}</Text>
+  </View>
+) : (
+  <Button
+    title="Get Account Details"
+    onPress={handleVerifyAccount}
+    loading={verifyingAccount}
+    disabled={verifyingAccount || !accountNumber.trim() || accountNumber.length !== 10 || !selectedBank}
+    variant="outline"
+    style={styles.verifyButton}
+  />
+)}
+            </View>
+          )}
+
           {/* Quick Amount Buttons */}
           <View style={styles.quickAmounts}>
             <Text style={styles.quickLabel}>Quick amounts:</Text>
@@ -168,21 +416,32 @@ export const PaymentScreen: React.FC = () => {
             <Card style={styles.feeCard} padding={16} margin={0}>
               <Text style={styles.feeTitle}>Transaction Summary</Text>
               <View style={styles.feeRow}>
-                <Text style={styles.feeLabel}>Amount:</Text>
+                <Text style={styles.feeLabel}>Withdrawal Amount:</Text>
                 <Text style={styles.feeValue}>{formatCurrency(numAmount)}</Text>
               </View>
-              {isDeposit && (
+              {isDeposit ? (
                 <View style={styles.feeRow}>
                   <Text style={styles.feeLabel}>Processing Fee:</Text>
                   <Text style={styles.feeValue}>{formatCurrency(0)}</Text>
                 </View>
+              ) : (
+                <>
+                  <View style={styles.feeRow}>
+                    <Text style={styles.feeLabel}>Platform Fee (2.3%):</Text>
+                    <Text style={styles.feeValueRed}>-{formatCurrency(Math.round(numAmount * 0.023))}</Text>
+                  </View>
+                  <View style={[styles.feeRow, styles.totalRow]}>
+                    <Text style={styles.totalLabel}>You'll Receive:</Text>
+                    <Text style={styles.totalValue}>{formatCurrency(Math.round(numAmount * 0.96))}</Text>
+                  </View>
+                </>
               )}
-              <View style={[styles.feeRow, styles.totalRow]}>
-                <Text style={styles.totalLabel}>
-                  {isDeposit ? 'Total to Pay:' : 'Amount to Receive:'}
-                </Text>
-                <Text style={styles.totalValue}>{formatCurrency(numAmount)}</Text>
-              </View>
+              {isDeposit && (
+                <View style={[styles.feeRow, styles.totalRow]}>
+                  <Text style={styles.totalLabel}>Total to Pay:</Text>
+                  <Text style={styles.totalValue}>{formatCurrency(numAmount)}</Text>
+                </View>
+              )}
             </Card>
           )}
 
@@ -190,7 +449,15 @@ export const PaymentScreen: React.FC = () => {
             title={isDeposit ? 'Proceed to Payment' : 'Withdraw Funds'}
             onPress={handlePayment}
             loading={loading}
-            disabled={numAmount <= 0 || (!isDeposit && numAmount > balance)}
+            disabled={
+              numAmount <= 0 ||
+              (!isDeposit && numAmount > balance) ||
+              (!isDeposit && (
+                accountNumber.length !== 10 ||
+                !bankCode.trim() ||
+                !accountName.trim()
+              ))
+            }
             style={styles.paymentButton}
           />
         </Card>
@@ -236,9 +503,49 @@ export const PaymentScreen: React.FC = () => {
       >
         <PaystackWebView
           amount={numAmount}
+          paymentUrl={paymentUrl}
           onSuccess={handlePaystackSuccess}
           onCancel={handlePaystackCancel}
+          reference={paymentReference}
         />
+      </Modal>
+
+      {/* Bank Picker Modal */}
+      <Modal
+        visible={showBankPicker}
+        animationType="slide"
+        presentationStyle="overFullScreen"
+        transparent={true}
+        onRequestClose={() => setShowBankPicker(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Select Bank</Text>
+              <TouchableOpacity
+                onPress={() => setShowBankPicker(false)}
+                style={styles.closeButton}
+              >
+                <Ionicons name="close" size={24} color="#1c1c1e" />
+              </TouchableOpacity>
+            </View>
+
+            <FlatList
+              data={availableBanks}
+              renderItem={renderBankItem}
+              keyExtractor={(item) => item.code}
+              contentContainerStyle={styles.bankList}
+              showsVerticalScrollIndicator={false}
+              ListEmptyComponent={
+                <View style={{ padding: 20, alignItems: 'center' }}>
+                  <Text style={{ color: '#8e8e93' }}>
+                    {loadingBanks ? 'Loading banks...' : 'No banks available'}
+                  </Text>
+                </View>
+              }
+            />
+          </View>
+        </View>
       </Modal>
     </ScrollView>
   );
@@ -256,7 +563,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#4B0082',
     paddingHorizontal: 20,
     paddingVertical: 24,
-    paddingTop: 60,
+    paddingTop: 15,
   },
   title: {
     fontSize: 28,
@@ -346,6 +653,11 @@ const styles = StyleSheet.create({
     color: '#1c1c1e',
     fontWeight: '500',
   },
+  feeValueRed: {
+    fontSize: 14,
+    color: '#dc3545',
+    fontWeight: '500',
+  },
   totalRow: {
     borderTopWidth: 1,
     borderTopColor: '#e1e5e9',
@@ -392,5 +704,108 @@ const styles = StyleSheet.create({
     color: '#8e8e93',
     flex: 1,
     lineHeight: 20,
+  },
+  withdrawalDetails: {
+    marginTop: 20,
+    marginBottom: 20,
+    padding: 20,
+    backgroundColor: '#f8f9fa',
+    borderRadius: 12,
+  },
+  withdrawalTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#1c1c1e',
+    marginBottom: 16,
+  },
+  detailLabel: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#1c1c1e',
+    marginBottom: 8,
+    marginTop: 12,
+  },
+  detailInput: {
+    borderWidth: 1,
+    borderColor: '#e1e5e9',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 14,
+    fontSize: 16,
+    backgroundColor: '#fff',
+    marginBottom: 8,
+  },
+  verifyButton: {
+    marginTop: 12,
+    marginBottom: 12,
+  },
+  bankName: {
+    fontSize: 14,
+    color: '#4B0082',
+    fontWeight: '500',
+    textAlign: 'center',
+  },
+  bankSelector: {
+    borderWidth: 1,
+    borderColor: '#e1e5e9',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 14,
+    backgroundColor: '#fff',
+    marginBottom: 8,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  bankSelectorText: {
+    fontSize: 16,
+  },
+  bankItem: {
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e1e5e9',
+  },
+  bankItemText: {
+    fontSize: 16,
+    color: '#1c1c1e',
+  },
+  modalContainer: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    maxHeight: '70%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e1e5e9',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#1c1c1e',
+  },
+  closeButton: {
+    padding: 5,
+  },
+  bankList: {
+    paddingHorizontal: 20,
+    paddingBottom: 20,
+  },
+  verifiedAccountName: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#4B0082',
+    marginBottom: 8,
   },
 });

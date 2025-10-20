@@ -1,10 +1,19 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Alert, Linking, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Alert, Linking, TouchableOpacity, Modal, TextInput } from 'react-native';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
+import { apiService } from '../services/api';
 
 export const HelpSupportScreen: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [feedbackModalVisible, setFeedbackModalVisible] = useState(false);
+  const [feedbackForm, setFeedbackForm] = useState({
+    rating: 5,
+    category: 'other',
+    subject: '',
+    message: '',
+  });
+  const [submittingFeedback, setSubmittingFeedback] = useState(false);
 
   const supportCategories = [
     {
@@ -50,7 +59,7 @@ export const HelpSupportScreen: React.FC = () => {
       title: 'Contact Support',
       icon: '📧',
       action: () => {
-        const email = 'support@givta.com';
+        const email = 'support@givta.app, givtamanager@gmail.com';
         const subject = 'Givta App Support Request';
         const url = `mailto:${email}?subject=${encodeURIComponent(subject)}`;
         Linking.openURL(url);
@@ -60,7 +69,7 @@ export const HelpSupportScreen: React.FC = () => {
       title: 'Call Support',
       icon: '📞',
       action: () => {
-        const phoneNumber = '+2341234567890';
+        const phoneNumber = '+234 813 927 0820';
         Linking.openURL(`tel:${phoneNumber}`);
       },
     },
@@ -68,18 +77,16 @@ export const HelpSupportScreen: React.FC = () => {
       title: 'WhatsApp Support',
       icon: '💬',
       action: () => {
-        const phoneNumber = '+2341234567890';
+        const phoneNumber = '+234 813 927 0820';
         const message = 'Hi, I need help with the Givta app';
         const url = `whatsapp://send?phone=${phoneNumber}&text=${encodeURIComponent(message)}`;
         Linking.openURL(url);
       },
     },
     {
-      title: 'FAQ',
-      icon: '❓',
-      action: () => {
-        Alert.alert('FAQ', 'Frequently Asked Questions will be available soon!');
-      },
+      title: 'Submit Feedback',
+      icon: '💬',
+      action: () => setFeedbackModalVisible(true),
     },
   ];
 
@@ -95,6 +102,55 @@ export const HelpSupportScreen: React.FC = () => {
         { text: 'Cancel', style: 'cancel' },
       ]
     );
+  };
+
+  const handleSubmitFeedback = async () => {
+    if (!feedbackForm.message.trim()) {
+      Alert.alert('Error', 'Please enter your feedback message');
+      return;
+    }
+
+    setSubmittingFeedback(true);
+    try {
+      const response = await apiService.submitFeedback({
+        rating: feedbackForm.rating,
+        category: feedbackForm.category,
+        subject: feedbackForm.subject,
+        message: feedbackForm.message,
+        deviceInfo: {
+          platform: 'mobile',
+          appVersion: '1.0.0',
+        },
+      });
+
+      if (response.success) {
+        Alert.alert('Success', 'Thank you for your feedback! We appreciate your input.');
+        setFeedbackModalVisible(false);
+        setFeedbackForm({
+          rating: 5,
+          category: 'other',
+          subject: '',
+          message: '',
+        });
+      } else {
+        Alert.alert('Error', response.error || 'Failed to submit feedback');
+      }
+    } catch (error) {
+      console.error('Error submitting feedback:', error);
+      Alert.alert('Error', 'Failed to submit feedback. Please try again.');
+    } finally {
+      setSubmittingFeedback(false);
+    }
+  };
+
+  const handleCancelFeedback = () => {
+    setFeedbackModalVisible(false);
+    setFeedbackForm({
+      rating: 5,
+      category: 'other',
+      subject: '',
+      message: '',
+    });
   };
 
   return (
@@ -160,7 +216,7 @@ export const HelpSupportScreen: React.FC = () => {
               <Text style={styles.contactIcon}>📧</Text>
               <View style={styles.contactInfo}>
                 <Text style={styles.contactLabel}>Email Support</Text>
-                <Text style={styles.contactValue}>support@givta.com</Text>
+                <Text style={styles.contactValue}>support@givta.app, givtamanager@gmail.com</Text>
               </View>
             </View>
 
@@ -168,7 +224,7 @@ export const HelpSupportScreen: React.FC = () => {
               <Text style={styles.contactIcon}>📞</Text>
               <View style={styles.contactInfo}>
                 <Text style={styles.contactLabel}>Phone Support</Text>
-                <Text style={styles.contactValue}>+234 123 456 7890</Text>
+                <Text style={styles.contactValue}>+234 813 927 0820</Text>
               </View>
             </View>
 
@@ -176,7 +232,7 @@ export const HelpSupportScreen: React.FC = () => {
               <Text style={styles.contactIcon}>💬</Text>
               <View style={styles.contactInfo}>
                 <Text style={styles.contactLabel}>WhatsApp</Text>
-                <Text style={styles.contactValue}>+234 123 456 7890</Text>
+                <Text style={styles.contactValue}>+234 813 927 0820</Text>
               </View>
             </View>
 
@@ -240,9 +296,132 @@ export const HelpSupportScreen: React.FC = () => {
         <Card style={styles.emergencyCard} padding={20} margin={16}>
           <Text style={styles.emergencyTitle}>🚨 Emergency Support</Text>
           <Text style={styles.emergencyText}>
-            For urgent security issues or account emergencies, contact us immediately at emergency@givta.com or call +234 123 456 7890.
+            For urgent security issues or account emergencies, contact us immediately at emergency@givta.app or call +234 813 927 0820.
           </Text>
         </Card>
+
+        {/* Feedback Modal */}
+        <Modal
+          visible={feedbackModalVisible}
+          animationType="slide"
+          presentationStyle="pageSheet"
+          onRequestClose={handleCancelFeedback}
+        >
+          <ScrollView style={styles.feedbackModalContainer}>
+            <View style={styles.feedbackModalHeader}>
+              <Text style={styles.feedbackModalTitle}>Submit Feedback</Text>
+              <Text style={styles.feedbackModalSubtitle}>
+                Help us improve by sharing your thoughts
+              </Text>
+            </View>
+
+            <View style={styles.feedbackModalContent}>
+              {/* Rating */}
+              <View style={styles.feedbackInputGroup}>
+                <Text style={styles.feedbackInputLabel}>Rating</Text>
+                <View style={styles.ratingContainer}>
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <TouchableOpacity
+                      key={star}
+                      onPress={() => setFeedbackForm(prev => ({ ...prev, rating: star }))}
+                    >
+                      <Text style={[
+                        styles.starIcon,
+                        feedbackForm.rating >= star && styles.starIconSelected
+                      ]}>
+                        ⭐
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+                <Text style={styles.ratingText}>
+                  {feedbackForm.rating === 5 ? 'Excellent' :
+                   feedbackForm.rating === 4 ? 'Good' :
+                   feedbackForm.rating === 3 ? 'Average' :
+                   feedbackForm.rating === 2 ? 'Poor' : 'Very Poor'}
+                </Text>
+              </View>
+
+              {/* Category */}
+              <View style={styles.feedbackInputGroup}>
+                <Text style={styles.feedbackInputLabel}>Category</Text>
+                <View style={styles.categoryPicker}>
+                  {[
+                    { key: 'bug', label: 'Bug Report' },
+                    { key: 'feature', label: 'Feature Request' },
+                    { key: 'ui', label: 'UI/UX Issue' },
+                    { key: 'performance', label: 'Performance' },
+                    { key: 'other', label: 'Other' }
+                  ].map((category) => (
+                    <TouchableOpacity
+                      key={category.key}
+                      style={[
+                        styles.categoryOption,
+                        feedbackForm.category === category.key && styles.categoryOptionSelected
+                      ]}
+                      onPress={() => setFeedbackForm(prev => ({ ...prev, category: category.key }))}
+                    >
+                      <Text style={[
+                        styles.categoryOptionText,
+                        feedbackForm.category === category.key && styles.categoryOptionTextSelected
+                      ]}>
+                        {category.label}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+
+              {/* Subject */}
+              <View style={styles.feedbackInputGroup}>
+                <Text style={styles.feedbackInputLabel}>Subject (Optional)</Text>
+                <TextInput
+                  style={styles.feedbackTextInput}
+                  placeholder="Brief summary of your feedback"
+                  value={feedbackForm.subject}
+                  onChangeText={(text) => setFeedbackForm(prev => ({ ...prev, subject: text }))}
+                  maxLength={100}
+                />
+              </View>
+
+              {/* Message */}
+              <View style={styles.feedbackInputGroup}>
+                <Text style={styles.feedbackInputLabel}>Message</Text>
+                <TextInput
+                  style={[styles.feedbackTextInput, styles.messageInput]}
+                  placeholder="Tell us what you think... What features do you love? What could be improved?"
+                  value={feedbackForm.message}
+                  onChangeText={(text) => setFeedbackForm(prev => ({ ...prev, message: text }))}
+                  multiline
+                  numberOfLines={4}
+                  textAlignVertical="top"
+                  maxLength={1000}
+                />
+              </View>
+
+              {/* Character count */}
+              <Text style={styles.characterCount}>
+                {feedbackForm.message.length}/1000 characters
+              </Text>
+            </View>
+
+            <View style={styles.feedbackModalButtons}>
+              <Button
+                title="Cancel"
+                onPress={handleCancelFeedback}
+                variant="outline"
+                style={styles.feedbackCancelButton}
+              />
+              <Button
+                title="Submit Feedback"
+                onPress={handleSubmitFeedback}
+                loading={submittingFeedback}
+                style={styles.feedbackSubmitButton}
+                disabled={!feedbackForm.message.trim()}
+              />
+            </View>
+          </ScrollView>
+        </Modal>
       </View>
     </ScrollView>
   );
@@ -427,5 +606,110 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#c62828',
     lineHeight: 22,
+  },
+  feedbackModalContainer: {
+    flex: 1,
+    backgroundColor: '#f8f9fa',
+  },
+  feedbackModalHeader: {
+    padding: 20,
+    alignItems: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e1e5e9',
+  },
+  feedbackModalTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#1c1c1e',
+    marginBottom: 8,
+  },
+  feedbackModalSubtitle: {
+    fontSize: 16,
+    color: '#8e8e93',
+    textAlign: 'center',
+  },
+  feedbackModalContent: {
+    flex: 1,
+    padding: 20,
+  },
+  feedbackInputGroup: {
+    marginBottom: 24,
+  },
+  feedbackInputLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1c1c1e',
+    marginBottom: 12,
+  },
+  ratingContainer: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 8,
+  },
+  starIcon: {
+    fontSize: 32,
+    color: '#d1d5db',
+  },
+  starIconSelected: {
+    color: '#fbbf24',
+  },
+  ratingText: {
+    fontSize: 14,
+    color: '#8e8e93',
+    fontStyle: 'italic',
+  },
+  categoryPicker: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  categoryOption: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    backgroundColor: '#f0f0f0',
+    borderRadius: 20,
+  },
+  categoryOptionSelected: {
+    backgroundColor: '#4B0082',
+  },
+  categoryOptionText: {
+    fontSize: 14,
+    color: '#8e8e93',
+  },
+  categoryOptionTextSelected: {
+    color: '#fff',
+  },
+  feedbackTextInput: {
+    borderWidth: 1,
+    borderColor: '#d1d5db',
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+    backgroundColor: '#fff',
+  },
+  messageInput: {
+    height: 100,
+    textAlignVertical: 'top',
+  },
+  characterCount: {
+    fontSize: 12,
+    color: '#8e8e93',
+    textAlign: 'right',
+    marginTop: 4,
+  },
+  feedbackModalButtons: {
+    flexDirection: 'row',
+    padding: 20,
+    gap: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#e1e5e9',
+  },
+  feedbackCancelButton: {
+    flex: 1,
+    borderColor: '#8e8e93',
+  },
+  feedbackSubmitButton: {
+    flex: 1,
+    backgroundColor: '#4B0082',
   },
 });

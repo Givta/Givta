@@ -1,9 +1,12 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Alert, Switch, TextInput, Modal } from 'react-native';
-import { updatePassword, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, ScrollView, Alert, Switch, TextInput, Modal, ActivityIndicator } from 'react-native';
+import { updatePassword, getAuth } from 'firebase/auth';
 import { Card } from '../components/Card';
 import { Button } from '../components/Button';
 import { useAuth } from '../contexts/AuthContext';
+import { apiService } from '../services/api';
+import { BiometricService } from '../services/biometric';
+import * as LocalAuthentication from 'expo-local-authentication';
 
 export const SecurityScreen: React.FC = () => {
   const { user } = useAuth();
@@ -25,12 +28,95 @@ export const SecurityScreen: React.FC = () => {
     confirmPassword: '',
   });
   const [passwordLoading, setPasswordLoading] = useState(false);
+  const [biometricModalVisible, setBiometricModalVisible] = useState(false);
+  const [biometricPasswordForm, setBiometricPasswordForm] = useState({
+    currentPassword: '',
+  });
+  const [biometricLoading, setBiometricLoading] = useState(false);
 
-  const updateSetting = (key: string, value: boolean) => {
-    setSecuritySettings(prev => ({
-      ...prev,
-      [key]: value,
-    }));
+  // Initialize biometric status on screen load
+  useEffect(() => {
+    const initializeSecuritySettings = async () => {
+      try {
+        // Check if biometric is enabled
+        const biometricEnabled = await BiometricService.isBiometricEnabled();
+        setSecuritySettings(prev => ({ ...prev, biometricAuth: biometricEnabled }));
+
+        // Check if 2FA is enabled
+        const statusResponse = await apiService.getTwoFactorStatus();
+        if (statusResponse.success && statusResponse.data?.enabled) {
+          setSecuritySettings(prev => ({ ...prev, twoFactorAuth: true }));
+        }
+      } catch (error) {
+        console.error('Error initializing security settings:', error);
+      }
+    };
+
+    initializeSecuritySettings();
+  }, []);
+
+  const updateSetting = async (key: string, value: boolean) => {
+    if (key === 'biometricAuth') {
+      const biometricEnabled = await BiometricService.isBiometricEnabled();
+
+      if (value && !biometricEnabled) {
+        // Enable biometric
+        Alert.alert(
+          'Enable Biometric Authentication',
+          'Enable biometric login to use fingerprint or face ID? Your current login credentials will be stored securely.',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            {
+              text: 'Enable',
+              onPress: async () => {
+                try {
+                  if (!user?.email) {
+                    Alert.alert('Error', 'Unable to get current user credentials. Please try logging out and back in.');
+                    return;
+                  }
+
+                  console.log('🔐 Starting biometric enrollment for user:', user.email);
+
+                  // Open biometric enrollment modal
+                  setBiometricModalVisible(true);
+                } catch (error) {
+                  console.error('Error during biometric enrollment:', error);
+                  Alert.alert('Error', 'Failed to setup biometric authentication');
+                }
+              }
+            }
+          ]
+        );
+      } else if (!value && biometricEnabled) {
+        // Disable biometric
+        Alert.alert(
+          'Disable Biometric Authentication',
+          'Are you sure you want to disable biometric authentication? You will need to use your email and password to log in.',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            {
+              text: 'Disable',
+              style: 'destructive',
+              onPress: async () => {
+                try {
+                  await BiometricService.disableBiometric();
+                  setSecuritySettings(prev => ({ ...prev, biometricAuth: false }));
+                  Alert.alert('Success', 'Biometric authentication disabled');
+                } catch (error) {
+                  Alert.alert('Error', 'Failed to disable biometric authentication');
+                }
+              }
+            }
+          ]
+        );
+      }
+    } else {
+      // Handle other settings normally
+      setSecuritySettings(prev => ({
+        ...prev,
+        [key]: value,
+      }));
+    }
   };
 
   const handleSave = async () => {
@@ -136,10 +222,22 @@ export const SecurityScreen: React.FC = () => {
 
     setPasswordLoading(true);
     try {
-      // For Firebase Auth, we need to reauthenticate the user first
-      // This is a simplified version - in production, you'd want to handle reauthentication properly
-      if (user) {
-        await updatePassword(user, passwordForm.newPassword);
+      // First, change password via backend API
+      const response = await apiService.changePassword(passwordForm.currentPassword, passwordForm.newPassword);
+
+      if (response.success) {
+        // Then update Firebase password if available
+        const auth = getAuth();
+        const firebaseUser = auth.currentUser;
+        if (firebaseUser) {
+          try {
+            await updatePassword(firebaseUser, passwordForm.newPassword);
+          } catch (firebaseError: any) {
+            console.warn('Firebase password update failed, but backend was successful:', firebaseError);
+            // Don't fail the operation if Firebase update fails
+          }
+        }
+
         Alert.alert('Success', 'Password changed successfully!');
         setPasswordModalVisible(false);
         setPasswordForm({
@@ -147,6 +245,8 @@ export const SecurityScreen: React.FC = () => {
           newPassword: '',
           confirmPassword: '',
         });
+      } else {
+        Alert.alert('Error', response.error || 'Failed to change password');
       }
     } catch (error: any) {
       console.error('Password change error:', error);
@@ -186,15 +286,194 @@ export const SecurityScreen: React.FC = () => {
     Alert.alert('Device Management', 'Device management feature coming soon!');
   };
 
-  const handleEnable2FA = () => {
-    Alert.alert(
-      'Two-Factor Authentication',
-      '2FA provides an extra layer of security to your account. Would you like to set it up?',
+  const handleEnable2FA = async () => {
+    setLoading(true);
+    try {
+      // Get 2FA status first
+      const statusResponse = await apiService.getTwoFactorStatus();
+
+      if (statusResponse.success && statusResponse.data?.enabled) {
+        // 2FA is already enabled, offer to disable
+        Alert.alert(
+          'Disable 2FA',
+          'Two-factor authentication is currently enabled. Would you like to disable it?',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Disable', style: 'destructive', onPress: handleDisable2FA }
+          ]
+        );
+      } else {
+        // 2FA is disabled, set it up
+        Alert.alert(
+          'Two-Factor Authentication',
+          '2FA provides an extra layer of security to your account. Would you like to set it up?',
+          [
+            { text: 'Not Now', style: 'cancel' },
+            { text: 'Set Up 2FA', onPress: start2FASetup }
+          ]
+        );
+      }
+    } catch (error) {
+      console.error('Error checking 2FA status:', error);
+      Alert.alert('Error', 'Failed to check 2FA status');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const start2FASetup = async () => {
+    setLoading(true);
+    try {
+      const response = await apiService.getTwoFactorSetup();
+
+      if (response.success && response.data) {
+        const { secret, qrCodeUrl, backupCodes } = response.data;
+
+        Alert.alert(
+          '2FA Setup',
+          'Scan the QR code with your authenticator app, then enter the code to enable 2FA.',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            {
+              text: 'Enter Code',
+              onPress: () => prompt2FAToken(secret, qrCodeUrl, backupCodes)
+            }
+          ]
+        );
+      } else {
+        Alert.alert('Error', 'Failed to generate 2FA setup');
+      }
+    } catch (error) {
+      console.error('Error starting 2FA setup:', error);
+      Alert.alert('Error', 'Failed to start 2FA setup');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const prompt2FAToken = (secret: string, qrCodeUrl: string, backupCodes: string[]) => {
+    Alert.prompt(
+      'Enter 2FA Token',
+      'Enter the 6-digit code from your authenticator app',
       [
-        { text: 'Not Now', style: 'cancel' },
-        { text: 'Set Up 2FA', onPress: () => Alert.alert('2FA Setup', '2FA setup coming soon!') }
-      ]
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Enable 2FA',
+          onPress: async (token: string | undefined) => {
+            if (token) {
+              await complete2FASetup(token, secret, backupCodes);
+            }
+          }
+        }
+      ],
+      'plain-text',
+      '',
+      'numeric'
     );
+  };
+
+  const complete2FASetup = async (token: string, secret: string, backupCodes: string[]) => {
+    setLoading(true);
+    try {
+      const response = await apiService.enableTwoFactor(token, secret);
+
+      if (response.success) {
+        setSecuritySettings(prev => ({ ...prev, twoFactorAuth: true }));
+        Alert.alert(
+          '2FA Enabled',
+          `Two-factor authentication has been enabled. Save these backup codes in a safe place:\n\n${backupCodes.join('\n')}`,
+          [
+            { text: 'OK' }
+          ]
+        );
+      } else {
+        Alert.alert('Error', response.error || 'Failed to enable 2FA');
+      }
+    } catch (error) {
+      console.error('Error completing 2FA setup:', error);
+      Alert.alert('Error', 'Failed to enable 2FA');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDisable2FA = async () => {
+    setLoading(true);
+    try {
+      const response = await apiService.disableTwoFactor();
+
+      if (response.success) {
+        setSecuritySettings(prev => ({ ...prev, twoFactorAuth: false }));
+        Alert.alert('2FA Disabled', 'Two-factor authentication has been disabled.');
+      } else {
+        Alert.alert('Error', response.error || 'Failed to disable 2FA');
+      }
+    } catch (error) {
+      console.error('Error disabling 2FA:', error);
+      Alert.alert('Error', 'Failed to disable 2FA');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleBiometricSubmit = async () => {
+    if (!biometricPasswordForm.currentPassword) {
+      Alert.alert('Error', 'Please enter your current password');
+      return;
+    }
+
+    setBiometricLoading(true);
+    try {
+      // First, perform biometric authentication to enroll the user's biometrics
+      const biometricResult = await LocalAuthentication.authenticateAsync({
+        promptMessage: 'Enable Biometric Authentication',
+        fallbackLabel: 'Use PIN',
+        cancelLabel: 'Cancel',
+        disableDeviceFallback: false,
+      });
+
+      console.log('🔐 Biometric enrollment result:', biometricResult);
+
+      if (biometricResult.success) {
+        // Biometric authentication successful - now enable biometric for this user
+        if (!user?.email) {
+          Alert.alert('Error', 'Unable to get current user email. Please try logging out and back in.');
+          return;
+        }
+
+        const success = await BiometricService.enableBiometric({
+          email: user.email,
+          password: biometricPasswordForm.currentPassword || '',
+        });
+
+        console.log('🔐 Biometric enable result:', success);
+
+        if (success) {
+          const isEnabledAfter = await BiometricService.isBiometricEnabled();
+          console.log('🔐 Biometric enabled status after enable:', isEnabledAfter);
+
+          setSecuritySettings(prev => ({ ...prev, biometricAuth: true }));
+          setBiometricModalVisible(false);
+          setBiometricPasswordForm({ currentPassword: '' });
+          Alert.alert('Success', 'Biometric authentication enabled! You can now use biometric login.');
+        } else {
+          Alert.alert('Error', 'Failed to save biometric settings.');
+        }
+      } else {
+        console.log('🔐 Biometric enrollment failed or was cancelled');
+        Alert.alert('Setup Cancelled', 'Biometric authentication setup was cancelled or failed. Try again.');
+      }
+    } catch (error) {
+      console.error('Error during biometric setup:', error);
+      Alert.alert('Error', 'Failed to setup biometric authentication');
+    } finally {
+      setBiometricLoading(false);
+    }
+  };
+
+  const handleCancelBiometricSetup = () => {
+    setBiometricModalVisible(false);
+    setBiometricPasswordForm({ currentPassword: '' });
   };
 
   return (
@@ -228,8 +507,8 @@ export const SecurityScreen: React.FC = () => {
             <View style={styles.statusItem}>
               <Text style={styles.statusIcon}>🔒</Text>
               <Text style={styles.statusLabel}>Biometric</Text>
-              <Text style={[styles.statusValue, styles.statusDisabled]}>
-                Off
+              <Text style={[styles.statusValue, securitySettings.biometricAuth ? styles.statusEnabled : styles.statusDisabled]}>
+                {securitySettings.biometricAuth ? 'On' : 'Off'}
               </Text>
             </View>
 
@@ -457,6 +736,56 @@ export const SecurityScreen: React.FC = () => {
             </View>
           </View>
         </Modal>
+
+        {/* Biometric Setup Modal */}
+        <Modal
+          visible={biometricModalVisible}
+          animationType="slide"
+          presentationStyle="pageSheet"
+          onRequestClose={handleCancelBiometricSetup}
+        >
+          <View style={styles.modalContainer}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Enable Biometric Login</Text>
+              <Text style={styles.modalSubtitle}>
+                Enter your current password to secure biometric login
+              </Text>
+            </View>
+
+            <View style={styles.modalContent}>
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>Current Password</Text>
+                <TextInput
+                  style={styles.textInput}
+                  placeholder="Enter your current password"
+                  secureTextEntry
+                  value={biometricPasswordForm.currentPassword}
+                  onChangeText={(text) =>
+                    setBiometricPasswordForm(prev => ({ ...prev, currentPassword: text }))
+                  }
+                />
+                <Text style={styles.inputDescription}>
+                  Your password will be securely stored to enable biometric login. This occurs locally on your device and can only be accessed with your biometrics.
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.modalButtons}>
+              <Button
+                title="Cancel"
+                onPress={handleCancelBiometricSetup}
+                variant="outline"
+                style={styles.modalCancelButton}
+              />
+              <Button
+                title="Enable Biometric"
+                onPress={handleBiometricSubmit}
+                loading={biometricLoading}
+                style={styles.modalSubmitButton}
+              />
+            </View>
+          </View>
+        </Modal>
       </View>
     </ScrollView>
   );
@@ -644,5 +973,12 @@ const styles = StyleSheet.create({
   modalSubmitButton: {
     flex: 1,
     backgroundColor: '#4B0082',
+  },
+  inputDescription: {
+    fontSize: 12,
+    color: '#8e8e93',
+    fontStyle: 'italic',
+    lineHeight: 18,
+    marginTop: 4,
   },
 });

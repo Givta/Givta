@@ -62,7 +62,7 @@ cp .env.example .env.production
 EXPO_PUBLIC_FIREBASE_API_KEY=your_production_api_key
 EXPO_PUBLIC_FIREBASE_PROJECT_ID=givta-prod
 EXPO_PUBLIC_PAYSTACK_PUBLIC_KEY=pk_live_your_live_key
-EXPO_PUBLIC_API_BASE_URL=https://api.givta.com/api
+EXPO_PUBLIC_API_BASE_URL=https://api.givta.app/api
 ```
 
 ### EAS Build Configuration
@@ -398,10 +398,10 @@ npm install @sentry/react-native
 
 ## Support Contacts
 
-- Technical Support: tech@givta.com
-- Customer Support: support@givta.com
-- DevOps: devops@givta.com
-- Product: product@givta.com
+- Technical Support: tech@givta.app
+- Customer Support: support@givta.app, givtamanager@gmail.com
+- DevOps: devops@givta.app
+- Product: product@givta.app
 
 ---
 

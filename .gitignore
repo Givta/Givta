@@ -32,10 +32,10 @@ yarn-error.*
 
 # local env files
 .env*.local
-
+.env
 # Firebase configuration files (keep templates)
-google-services.json
-ios/GoogleService-Info.plist
+# google-services.json  # Temporarily included for build
+# ios/GoogleService-Info.plist  # Temporarily included for build
 
 # typescript
 *.tsbuildinfo

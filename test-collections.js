@@ -33,9 +33,9 @@ console.log('🔥 Testing Givta Firestore Collections...\n');
 const sampleData = {
   users: {
     testUser1: {
-      email: "test1@givta.com",
+      email: "test1@givta.app",
       displayName: "Test User 1",
-      phoneNumber: "+2341234567890",
+      phoneNumber: "+234 813 927 0820",
       emailVerified: true,
       isActive: true,
       referralCode: "TEST123",
@@ -51,7 +51,7 @@ const sampleData = {
       kycStatus: "not_submitted"
     },
     testUser2: {
-      email: "test2@givta.com",
+      email: "test2@givta.app",
       displayName: "Test User 2",
       phoneNumber: "+2341234567891",
       emailVerified: true,

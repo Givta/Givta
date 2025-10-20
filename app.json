@@ -14,7 +14,6 @@
       "resizeMode": "contain",
       "backgroundColor": "#4B0082"
     },
-
     "assetBundlePatterns": [
       "**/*"
     ],
@@ -28,6 +27,20 @@
         "NSCameraUsageDescription": "This app uses the camera for profile pictures and QR code scanning.",
         "NSPhotoLibraryUsageDescription": "This app uses the photo library to upload profile pictures.",
         "NSLocationWhenInUseUsageDescription": "This app uses location to provide location-based services.",
+        "NSAppTransportSecurity": {
+          "NSAllowsArbitraryLoads": true,
+          "NSExceptionDomains": {
+            "localhost": {
+              "NSExceptionAllowsInsecureHTTPLoads": true
+            },
+            "exp.direct": {
+              "NSExceptionAllowsInsecureHTTPLoads": true
+            },
+            "expo.dev": {
+              "NSExceptionAllowsInsecureHTTPLoads": true
+            }
+          }
+        },
         "CFBundleURLTypes": [
           {
             "CFBundleURLSchemes": [
@@ -65,12 +78,60 @@
         {
           "action": "VIEW",
           "data": {
+            "scheme": "givta"
+          },
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
+        },
+        {
+          "action": "VIEW",
+          "data": {
             "scheme": "https",
             "host": "givta.app",
             "pathPrefix": "/tip"
           },
-          "category": "BROWSABLE",
-          "category": "DEFAULT"
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
+        },
+        {
+          "action": "VIEW",
+          "data": {
+            "scheme": "https",
+            "host": "givta.app",
+            "pathPrefix": "/tip-share"
+          },
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
+        },
+        {
+          "action": "VIEW",
+          "data": {
+            "scheme": "https",
+            "host": "givta.app",
+            "pathPrefix": "/ref"
+          },
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
+        },
+        {
+          "action": "VIEW",
+          "data": {
+            "scheme": "https",
+            "host": "givta.app",
+            "pathPrefix": "/challenge"
+          },
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
         }
       ],
       "googleServicesFile": "./google-services.json"
@@ -103,18 +164,17 @@
         "expo-build-properties",
         {
           "android": {
-            "compileSdkVersion": 34,
-            "targetSdkVersion": 34,
-            "minSdkVersion": 21,
-            "buildToolsVersion": "34.0.0",
-            "kotlinVersion": "1.9.0"
+            "compileSdkVersion": 35,
+            "targetSdkVersion": 35,
+            "minSdkVersion": 24,
+            "buildToolsVersion": "35.0.0",
+            "kotlinVersion": "2.0.21"
           },
-      "ios": {
-        "deploymentTarget": "15.1"
-      }
+          "ios": {
+            "deploymentTarget": "15.1"
+          }
         }
       ],
-
       [
         "expo-secure-store",
         {
@@ -125,16 +185,17 @@
     "experiments": {
       "typedRoutes": true
     },
-    "extra": {
-      "eas": {
-        "projectId": "your-eas-project-id"
-      }
-    },
     "updates": {
       "url": "https://u.expo.dev/your-project-id"
     },
     "runtimeVersion": {
       "policy": "sdkVersion"
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "2e4a833f-cd14-487f-aede-d463dd8b27a1"
+      }
+    },
+    "owner": "unusualdan"
   }
 }

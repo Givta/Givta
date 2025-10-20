@@ -104,35 +104,34 @@ export interface ApiResponse<T> {
 
 class ApiService {
   private baseURL: string;
-  private token: string | null = null;
 
   constructor() {
     // Use the centralized config for the API base URL
     this.baseURL = apiConfig.baseURL;
-    this.loadToken();
   }
 
-  private async loadToken(): Promise<void> {
+  private async getFirebaseToken(): Promise<string | null> {
     try {
-      this.token = await AsyncStorage.getItem('authToken');
+      const { getAuth } = await import('firebase/auth');
+      const auth = getAuth();
+      const user = auth.currentUser;
+
+      if (user) {
+        // This will automatically refresh the token if needed
+        return await user.getIdToken();
+      }
+
+      return null;
     } catch (error) {
-      console.error('Error loading token:', error);
+      console.error('Error getting Firebase token:', error);
+      return null;
     }
-  }
-
-  private async setToken(token: string): Promise<void> {
-    this.token = token;
-    await AsyncStorage.setItem('authToken', token);
-  }
-
-  private async clearToken(): Promise<void> {
-    this.token = null;
-    await AsyncStorage.removeItem('authToken');
   }
 
   private async request<T>(
     endpoint: string,
-    options: RequestInit = {}
+    options: RequestInit = {},
+    retryCount = 0
   ): Promise<ApiResponse<T>> {
     try {
       const url = `${this.baseURL}${endpoint}`;
@@ -141,8 +140,10 @@ class ApiService {
         ...(options.headers as Record<string, string>),
       };
 
-      if (this.token) {
-        headers.Authorization = `Bearer ${this.token}`;
+      // Get fresh Firebase ID token for each request
+      const firebaseToken = await this.getFirebaseToken();
+      if (firebaseToken) {
+        headers.Authorization = `Bearer ${firebaseToken}`;
       }
 
       const response = await fetch(url, {
@@ -150,18 +151,43 @@ class ApiService {
         headers,
       });
 
-      const data = await response.json();
+      const raw = await response.json();
+
+      // Check if token expired (401) and retry once with fresh token
+      if (response.status === 401 && retryCount === 0) {
+        console.log('Token expired, refreshing and retrying...');
+        const freshToken = await this.getFirebaseToken(); // Force refresh
+        if (freshToken) {
+          // Retry the request with refreshed token
+          return this.request(endpoint, options, retryCount + 1);
+        }
+      }
+
+      // Normalize server envelope { success, message, data }
+      if (raw && typeof raw === 'object' && ('success' in raw || 'data' in raw)) {
+        const envelope = raw as { success?: boolean; data?: any; message?: string; error?: string };
+        if (!response.ok || envelope.success === false) {
+          return {
+            success: false,
+            error: envelope.message || envelope.error || `HTTP ${response.status}`,
+          };
+        }
+        return {
+          success: true,
+          data: (envelope.data ?? raw) as T,
+        };
+      }
 
       if (!response.ok) {
         return {
           success: false,
-          error: data.message || `HTTP ${response.status}`,
+          error: (raw && (raw.message || raw.error)) || `HTTP ${response.status}`,
         };
       }
 
       return {
         success: true,
-        data,
+        data: raw as T,
       };
     } catch (error) {
       console.error('API request failed:', error);
@@ -172,18 +198,16 @@ class ApiService {
     }
   }
 
+
+
   // Authentication
-  async login(email: string, password: string): Promise<ApiResponse<{ user: User; token: string }>> {
-    const response = await this.request<{ user: User; token: string }>('/auth/login', {
+  async login(email: string, password: string): Promise<ApiResponse<{ user: User; tokens: { accessToken: string; refreshToken: string } }>> {
+    const response = await this.request<{ user: User; tokens: { accessToken: string; refreshToken: string } }>('/auth/login', {
       method: 'POST',
       body: JSON.stringify({ email, password }),
     });
 
-    if (response.success && response.data?.token) {
-      await this.setToken(response.data.token);
-    }
-
-    return response;
+    return response as ApiResponse<{ user: User; tokens: { accessToken: string; refreshToken: string } }>;
   }
 
   async register(userData: {
@@ -191,27 +215,19 @@ class ApiService {
     password: string;
     displayName?: string;
     phoneNumber?: string;
-  }): Promise<ApiResponse<{ user: User; token: string }>> {
-    const response = await this.request<{ user: User; token: string }>('/auth/register', {
+  }): Promise<ApiResponse<{ user: User; tokens: { accessToken: string; refreshToken: string } }>> {
+    const response = await this.request<{ user: User; tokens: { accessToken: string; refreshToken: string } }>('/auth/register', {
       method: 'POST',
       body: JSON.stringify(userData),
     });
 
-    if (response.success && response.data?.token) {
-      await this.setToken(response.data.token);
-    }
-
-    return response;
+    return response as ApiResponse<{ user: User; tokens: { accessToken: string; refreshToken: string } }>;
   }
 
   async logout(): Promise<ApiResponse<void>> {
     const response = await this.request<void>('/auth/logout', {
       method: 'POST',
     });
-
-    if (response.success) {
-      await this.clearToken();
-    }
 
     return response;
   }
@@ -519,8 +535,44 @@ class ApiService {
     });
   }
 
-  // Legacy Tipping Links (for backward compatibility)
+  // User Search for Tipping
+  async searchUsersForTipping(query: string): Promise<ApiResponse<Array<{
+    id: string;
+    username: string;
+    displayName: string;
+    email?: string;
+    phoneNumber?: string;
+    type: 'username' | 'phone' | 'referral';
+  }>>> {
+    return this.request<Array<{
+      id: string;
+      username: string;
+      displayName: string;
+      email?: string;
+      phoneNumber?: string;
+      type: 'username' | 'phone' | 'referral';
+    }>>(`/tips/search?q=${encodeURIComponent(query)}`);
+  }
+
+  // Get User by Tipping Identifier
   async getUserByTippingIdentifier(identifier: string): Promise<ApiResponse<{
+    userId: string;
+    name: string;
+    username?: string;
+    phoneNumber?: string;
+    walletBalance: number;
+  }>> {
+    return this.request<{
+      userId: string;
+      name: string;
+      username?: string;
+      phoneNumber?: string;
+      walletBalance: number;
+    }>(`/tips/user/${encodeURIComponent(identifier)}`);
+  }
+
+  // Legacy Tipping Links (for backward compatibility)
+  async getUserByTippingIdentifierLegacy(identifier: string): Promise<ApiResponse<{
     userId: string;
     name: string;
     walletBalance: number;
@@ -529,7 +581,7 @@ class ApiService {
       userId: string;
       name: string;
       walletBalance: number;
-    }>(`/tip/${identifier}`);
+    }>(`/tips/tip/${identifier}`);
   }
 
   async sendTipViaLinkLegacy(receiverIdentifier: string, amount: number, paymentMethod?: string): Promise<ApiResponse<{
@@ -558,6 +610,7 @@ class ApiService {
   async getReferralStats(): Promise<ApiResponse<{
     totalEarnings: number;
     totalReferrals: number;
+    referralCode: string;
     levelStats: {
       level: number;
       count: number;
@@ -567,6 +620,7 @@ class ApiService {
     return this.request<{
       totalEarnings: number;
       totalReferrals: number;
+      referralCode: string;
       levelStats: {
         level: number;
         count: number;
@@ -593,7 +647,7 @@ class ApiService {
       authorization_url: string;
       access_code: string;
       reference: string;
-    }>('/paystack/initialize', {
+    }>('/payments/paystack/initialize', {
       method: 'POST',
       body: JSON.stringify({ amount, email }),
     });
@@ -606,7 +660,7 @@ class ApiService {
     return this.request<{
       status: string;
       transaction: Transaction;
-    }>(`/paystack/verify/${reference}`);
+  }>(`/paystack/verify/${reference}`);
   }
 
   // Notifications
@@ -637,6 +691,20 @@ class ApiService {
   async markNotificationAsRead(notificationId: string): Promise<ApiResponse<void>> {
     return this.request<void>(`/notifications/${notificationId}/read`, {
       method: 'PUT',
+    });
+  }
+
+  async markAllNotificationsAsRead(): Promise<ApiResponse<void>> {
+    return this.request<void>(`/notifications/read-all`, {
+      method: 'PUT',
+    });
+  }
+
+  // Register device token with backend for push notifications
+  async registerDeviceToken(deviceToken: string, platform: string = 'mobile'): Promise<ApiResponse<void>> {
+    return this.request<void>(`/auth/device`, {
+      method: 'POST',
+      body: JSON.stringify({ deviceToken, platform }),
     });
   }
 
@@ -850,8 +918,109 @@ class ApiService {
       body: JSON.stringify({ accountNumber, bankCode }),
     });
   }
-
   // Analytics
+  async getAnalyticsDashboard(): Promise<ApiResponse<{
+    user: {
+      name: string;
+      username: string;
+      joinDate: string;
+      kycStatus: string;
+      referralCode: string;
+    };
+    wallet: {
+      balance: number;
+      currency: string;
+    };
+    summary: {
+      thisMonth: {
+        spending: number;
+        earnings: number;
+        transactions: number;
+        netFlow: number;
+      };
+      categories: Record<string, number>;
+      recentActivity: Array<{
+        id: string;
+        type: string;
+        amount: number;
+        description: string;
+        date: string;
+        status: string;
+      }>;
+    };
+    referrals: {
+      totalReferrals: number;
+      totalEarnings: number;
+      levelBreakdown: Array<{
+        level: number;
+        count: number;
+        earnings: number;
+      }>;
+    };
+    goals: {
+      monthlyTarget: number;
+      currentProgress: number;
+      percentageComplete: number;
+    };
+    insights: {
+      topCategory: string;
+      avgTransaction: number;
+      mostActiveDay: string;
+      savingsRate: number;
+    };
+  }>> {
+    return this.request<{
+      user: {
+        name: string;
+        username: string;
+        joinDate: string;
+        kycStatus: string;
+        referralCode: string;
+      };
+      wallet: {
+        balance: number;
+        currency: string;
+      };
+      summary: {
+        thisMonth: {
+          spending: number;
+          earnings: number;
+          transactions: number;
+          netFlow: number;
+        };
+        categories: Record<string, number>;
+        recentActivity: Array<{
+          id: string;
+          type: string;
+          amount: number;
+          description: string;
+          date: string;
+          status: string;
+        }>;
+      };
+      referrals: {
+        totalReferrals: number;
+        totalEarnings: number;
+        levelBreakdown: Array<{
+          level: number;
+          count: number;
+          earnings: number;
+        }>;
+      };
+      goals: {
+        monthlyTarget: number;
+        currentProgress: number;
+        percentageComplete: number;
+      };
+      insights: {
+        topCategory: string;
+        avgTransaction: number;
+        mostActiveDay: string;
+        savingsRate: number;
+      };
+    }>('/analytics/dashboard');
+  }
+
   async getAnalytics(period = '30d'): Promise<ApiResponse<{
     totalSpent: number;
     totalEarned: number;
@@ -872,6 +1041,108 @@ class ApiService {
         count: number;
       }[];
     }>(`/analytics?period=${period}`);
+  }
+
+  // Weekly Rankings (for Givta Rewards)
+  async getWeeklyRankings(type: 'tippers' | 'tipped'): Promise<ApiResponse<{
+    type: string;
+    weekStart: string;
+    rankings: Array<{
+      rank: number;
+      username: string;
+      userId: string;
+      amount: number;
+      displayName: string;
+    }>;
+  }>> {
+    return this.request<{
+      type: string;
+      weekStart: string;
+      rankings: Array<{
+        rank: number;
+        username: string;
+        userId: string;
+        amount: number;
+        displayName: string;
+      }>;
+    }>(`/analytics/rankings?type=${type}`);
+  }
+
+  // Two-Factor Authentication
+  async getTwoFactorSetup(): Promise<ApiResponse<{
+    secret: string;
+    qrCodeUrl: string;
+    backupCodes: string[];
+  }>> {
+    return this.request<{
+      secret: string;
+      qrCodeUrl: string;
+      backupCodes: string[];
+    }>('/twofactor/setup');
+  }
+
+  async enableTwoFactor(token: string, secret: string): Promise<ApiResponse<void>> {
+    return this.request<void>('/twofactor/enable', {
+      method: 'POST',
+      body: JSON.stringify({ token, secret }),
+    });
+  }
+
+  async verifyTwoFactor(token: string): Promise<ApiResponse<{
+    verified: boolean;
+  }>> {
+    return this.request<{
+      verified: boolean;
+    }>('/twofactor/verify', {
+      method: 'POST',
+      body: JSON.stringify({ token }),
+    });
+  }
+
+  async disableTwoFactor(): Promise<ApiResponse<void>> {
+    return this.request<void>('/twofactor/disable', {
+      method: 'POST',
+    });
+  }
+
+  async getTwoFactorStatus(): Promise<ApiResponse<{
+    enabled: boolean;
+  }>> {
+    return this.request<{
+      enabled: boolean;
+    }>('/twofactor/status');
+  }
+
+  async regenerateTwoFactorBackupCodes(): Promise<ApiResponse<{
+    backupCodes: string[];
+  }>> {
+    return this.request<{
+      backupCodes: string[];
+    }>('/twofactor/backup-codes', {
+      method: 'POST',
+    });
+  }
+
+  // Feedback
+  async submitFeedback(feedback: {
+    rating: number;
+    category: string;
+    subject?: string;
+    message: string;
+    deviceInfo?: any;
+  }): Promise<ApiResponse<{
+    feedbackId: string;
+    rating: number;
+    category: string;
+  }>> {
+    return this.request<{
+      feedbackId: string;
+      rating: number;
+      category: string;
+    }>('/users/feedback', {
+      method: 'POST',
+      body: JSON.stringify(feedback),
+    });
   }
 
   // Referral Withdrawal

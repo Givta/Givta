@@ -281,7 +281,7 @@ When reporting bugs, include:
 ## Test Data
 
 ### Test Users:
-- Email: test@givta.com
+- Email: test@givta.app
 - Password: TestPass123!
 
 ### Test Payment Cards (Paystack):
@@ -331,6 +331,6 @@ jobs:
 
 ## Support Contacts
 
-- Development Team: dev@givta.com
-- QA Team: qa@givta.com
-- Product Team: product@givta.com
+- Development Team: dev@givta.app
+- QA Team: qa@givta.app
+- Product Team: product@givta.app

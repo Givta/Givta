@@ -1,30 +1,46 @@
-import { initializeApp, getApp, getApps } from 'firebase/app';
+// Import both web and React Native Firebase
+import { initializeApp } from 'firebase/app';
+import firebase from 'firebase/app';
+
+// Import web Firebase services
 import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
-import { getMessaging, getToken, onMessage } from 'firebase/messaging';
 
 import { config, firebaseConfig } from './config';
 
-// Initialize Firebase
-const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+// Initialize Firebase (web version for compatibility)
+const app = initializeApp(firebaseConfig);
 
-// Initialize Firebase services
+// Use web Firebase services
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 export const storage = getStorage(app);
 
-// Initialize Firebase Cloud Messaging for web
-let messaging: any = null;
+// Try to load React Native Firebase messaging dynamically
+let messagingInstance: any = null;
+
 try {
-  // Try to initialize messaging - will work in web environments
-  messaging = getMessaging(app);
-  console.log('✅ Firebase Messaging initialized');
+  // Try React Native Firebase messaging first (if installed)
+  const rnFirebaseMessaging = require('@react-native-firebase/messaging');
+  if (rnFirebaseMessaging && rnFirebaseMessaging.default) {
+    messagingInstance = rnFirebaseMessaging.default;
+    console.log('✅ React Native Firebase Messaging loaded');
+  } else {
+    // Fall back to web Firebase messaging
+    const { getMessaging } = require('firebase/messaging');
+    messagingInstance = getMessaging(app);
+    console.log('✅ Web Firebase Messaging loaded');
+  }
 } catch (error: any) {
-  console.log('📱 Firebase Messaging not available in this environment:', error.message);
+  console.log('📱 Firebase Messaging not available:', error.message);
 }
 
-export { messaging };
+export { messagingInstance as messaging };
+
+// For additional React Native Firebase support (when installed), you can add:
+// import messaging from '@react-native-firebase/messaging';
+// export const rnMessaging = messaging;
 
 // Firebase Analytics (if needed)
 // export const analytics = getAnalytics(app);
