@@ -1,0 +1,366 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // =========================== PRODUCTION FIRESTORE SECURITY RULES ============================
+    // Givta Platform - Complete Security Rules for Production Deployment
+
+    // ⚠️ DEVELOPMENT MODE COMMENTED OUT - ENABLE ONLY FOR DEVELOPMENT
+    // Uncomment the line below ONLY for local development/testing
+    // match /{document=**} { allow read, write: if true; }
+
+    // ============================ HELPER FUNCTIONS ============================
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && request.auth.token.admin == true;
+    }
+
+    function isValidUser() {
+      return isAuthenticated() && request.auth.token.email_verified == true;
+    }
+
+    function isOwnTicket(ticketId) {
+      return isAuthenticated() &&
+             exists(/databases/$(database)/documents/supportTickets/$(ticketId)) &&
+             get(/databases/$(database)/documents/supportTickets/$(ticketId)).data.userId == request.auth.uid;
+    }
+
+    function isCreatorOfChallenge(challengeId) {
+      return isAuthenticated() &&
+             exists(/databases/$(database)/documents/challenges/$(challengeId)) &&
+             get(/databases/$(database)/documents/challenges/$(challengeId)).data.userId == request.auth.uid;
+    }
+
+    function isCreatorOfSponsoredChallenge(challengeId) {
+      return isAuthenticated() &&
+             exists(/databases/$(database)/documents/sponsoredChallenges/$(challengeId)) &&
+             get(/databases/$(database)/documents/sponsoredChallenges/$(challengeId)).data.userId == request.auth.uid;
+    }
+
+    // ============================ USER COLLECTIONS ============================
+
+    // Users collection - Core user profiles
+    match /users/{userId} {
+      // Users can read their own profile
+      allow read: if isOwner(userId);
+      // Users can create their own profile
+      allow create: if isAuthenticated() && request.auth.uid == userId;
+      // Users can update their own profile, admins can manage all
+      allow update: if isOwner(userId) || isAdmin();
+      // Limited read access for user discovery (e.g., search)
+      allow read: if isAuthenticated() && request.query.limit <= 10;
+      // Admins have full access
+      allow read, write: if isAdmin();
+    }
+
+    // Wallets collection - User financial data
+    match /wallets/{walletId} {
+      // Users can only access their own wallet
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      // Users can create their own wallet
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      // Users can update their own wallet data
+      allow update: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      // Admins have full access for support/security
+      allow read, write: if isAdmin();
+    }
+
+    // Transactions collection - Payment history
+    match /transactions/{transactionId} {
+      // Users can only see their own transactions
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      // Users can create transactions (for deposits/withdrawals)
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      // Only backend/admin can update transaction status
+      allow update: if isAdmin();
+      // Admins can see all transactions for compliance
+      allow read, delete: if isAdmin();
+    }
+
+    // Referrals collection - Referral relationships
+    match /referrals/{referralId} {
+      // Users can see referrals where they are referrer or referred
+      allow read: if isAuthenticated() &&
+        (resource.data.referrerId == request.auth.uid ||
+         resource.data.referredId == request.auth.uid);
+      // Backend creates referral records
+      allow create: if isAuthenticated();
+      // Backend/admin updates referral status
+      allow update: if isAdmin();
+      // Admins can audit all referrals
+      allow read: if isAdmin();
+    }
+
+    // Notifications collection - User notifications
+    match /notifications/{notificationId} {
+      // Users manage their own notifications
+      allow read, write: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      // Backend creates notifications
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      // Admins can view user notifications for support
+      allow read, write: if isAdmin();
+    }
+
+    // Tips collection - Direct tipping records
+    match /tips/{tipId} {
+      // Users can see tips they sent or received
+      allow read: if isAuthenticated() &&
+        (resource.data.senderId == request.auth.uid ||
+         resource.data.recipientId == request.auth.uid);
+      // Users can create tips they send
+      allow create: if isAuthenticated() && request.resource.data.senderId == request.auth.uid;
+      // Admins can manage tips for disputes/support
+      allow update: if isAdmin();
+      // Admins can read all tips for analytics
+      allow read: if isAdmin();
+    }
+
+    // KYC collection - Know Your Customer data
+    match /kyc/{kycId} {
+      // Users can view their own KYC status
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      // Users can submit KYC documents
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      // Admins review and approve/reject KYC
+      allow read, write: if isAdmin();
+    }
+
+    // WhatsApp Sessions collection - WhatsApp business integration
+    match /whatsapp_sessions/{sessionId} {
+      // Users access their own WhatsApp sessions
+      allow read, write: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      // Backend creates initial sessions
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      // Admins can monitor WhatsApp integration
+      allow read, write: if isAdmin();
+    }
+
+    // Two Factor Backup Codes collection - 2FA security
+    match /twoFactorBackupCodes/{codeId} {
+      // Users manage their own backup codes
+      allow read, write: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      // Backend generates backup codes
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      // Admins can assist with 2FA recovery if needed
+      allow read, write: if isAdmin();
+    }
+
+    // Two Factor Setup collection - 2FA configuration
+    match /twoFactorSetup/{setupId} {
+      // Users configure their own 2FA
+      allow read, write: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow read, write: if isAdmin();
+    }
+
+    // External Tips collection - Tips from public links
+    match /externalTips/{tipId} {
+      // Backend creates external tip records
+      allow create: if isAuthenticated();
+      // Users can see tips they sent (as tipper) or received (as creator)
+      allow read: if isAuthenticated() &&
+        (resource.data.tipperId == request.auth.uid ||
+         resource.data.creatorId == request.auth.uid);
+      // Admins can monitor external tipping
+      allow read, write: if isAdmin();
+    }
+
+    // Tip Links collection - Public tipping URLs
+    match /tipLinks/{tipLinkId} {
+      // Anyone can access public tip links (for receiving tips)
+      allow read: if true;
+      // Creators manage their own tip links
+      allow read, write: if isAuthenticated() && resource.data.creatorId == request.auth.uid;
+      allow create: if isAuthenticated() && request.resource.data.creatorId == request.auth.uid;
+      // Admins can manage tip links
+      allow read, write: if isAdmin();
+    }
+
+    // Feedback collection - User feedback
+    match /feedback/{feedbackId} {
+      // Users can create and read their own feedback
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      // Admins can view all feedback
+      allow read, update: if isAdmin();
+    }
+
+    // ============================ CHALLENGE SYSTEM ============================
+
+    // Challenges collection - User-created challenges
+    match /challenges/{challengeId} {
+      // Public challenges are readable by all authenticated users
+      allow read: if isAuthenticated() && resource.data.isPublic == true;
+      // Challenge creators manage their challenges
+      allow read, write: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      // Users can create their own challenges
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      // Admins can moderate all challenges
+      allow read, write: if isAdmin();
+    }
+
+    // Sponsored Challenges collection - Admin/business sponsored challenges
+    match /sponsoredChallenges/{challengeId} {
+      // Public read for active sponsored challenges
+      allow read: if resource.data.status == 'active' ||
+                   resource.data.status == 'approved' ||
+                   resource.data.status == 'completed';
+      // Challenge sponsors/creators manage their challenges
+      allow read: if isCreatorOfSponsoredChallenge(challengeId);
+      // Authenticated users can create sponsored challenge proposals
+      allow create: if isAuthenticated();
+      // Admins manage sponsored challenges
+      allow read, write: if isAdmin();
+    }
+
+    // Challenge Tips collection - Tips within challenges
+    match /challengeTips/{tipId} {
+      // Challenge participants can create tips
+      allow create: if isAuthenticated();
+      // Users can see tips in challenges they own
+      allow read: if isAuthenticated() && isCreatorOfChallenge(resource.data.challengeId);
+      // Limited reads for listing (max 100 per query)
+      allow read: if isAuthenticated() && request.query.limit <= 100;
+      // Admins can monitor all challenge tips
+      allow read, write: if isAdmin();
+    }
+
+    // Challenge Types collection - Predefined challenge templates
+    match /challengeTypes/{challengeTypeId} {
+      // All authenticated users can see challenge types
+      allow read: if isAuthenticated();
+      // Admins create and manage challenge types
+      allow read, write: if isAdmin();
+    }
+
+    // Achievements collection - Gamification achievements
+    match /achievements_v2/{achievementId} {
+      // All authenticated users can see available achievements
+      allow read: if isAuthenticated();
+      // Admins create and update achievements
+      allow create, update: if isAdmin();
+      // Admins have full control
+      allow read, write: if isAdmin();
+    }
+
+    // User Stats collection - User gamification data
+    match /user_stats_v2/{statsId} {
+      // Users can see their own stats
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      // Backend creates user stats
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      // Users can update their own stats (progress, etc.)
+      allow update: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      // Admins can manage all user stats
+      allow create, update: if isAdmin();
+      // Admins can read all stats
+      allow read: if isAdmin();
+    }
+
+    // Ranking Rules collection - Gamification rules
+    match /ranking_rules_v2/{document=**} {
+      // Only admins can manage ranking rules
+      allow read, write: if isAdmin();
+    }
+
+    // ============================ ADMIN SYSTEM ============================
+
+    // System Logs collection - Comprehensive logging
+    match /systemLogs/{logId} {
+      // Only admins can access system logs
+      allow read, write: if isAdmin();
+    }
+
+    // System Settings collection - Platform configuration
+    match /systemSettings/{settingId} {
+      // Only admins can manage system settings
+      allow read, write: if isAdmin();
+    }
+
+    // Notification Templates collection - Email/push templates
+    match /notificationTemplates/{templateId} {
+      // Only admins can manage notification templates
+      allow read, write: if isAdmin();
+    }
+
+    // Maintenance Records collection - System maintenance logs
+    match /maintenanceRecords/{recordId} {
+      // Only admins can manage maintenance records
+      allow read, write: if isAdmin();
+    }
+
+    // Support Tickets collection - Customer support
+    match /supportTickets/{ticketId} {
+      // Users can create their own support tickets
+      allow create: if isAuthenticated() &&
+        request.resource.data.userId == request.auth.uid;
+      // Users can read their own tickets
+      allow read: if isOwnTicket(ticketId);
+      // Admins can manage all support tickets
+      allow read, write: if isAdmin();
+    }
+
+    // Support Messages collection - Ticket conversations
+    match /supportMessages/{messageId} {
+      // Users can create messages in their own tickets
+      allow create: if isAuthenticated() &&
+        request.resource.data.senderId == request.auth.uid &&
+        isOwnTicket(request.resource.data.ticketId);
+      // Users can read messages from their tickets
+      allow read: if isAuthenticated() && isOwnTicket(resource.data.ticketId);
+      // Admins can manage all support messages
+      allow read, write: if isAdmin();
+    }
+
+    // ============================ UTILITY COLLECTIONS ============================
+
+    // Config collection - Application configuration
+    match /config/{document=**} {
+      // Only admins can manage configuration
+      allow read, write: if isAdmin();
+    }
+
+    // Analytics collection - Usage analytics
+    match /analytics/{document=**} {
+      // Backend writes analytics data
+      allow write: if isAdmin();
+      // Users can see their own analytics
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      // Admins can see all analytics
+      allow read: if isAdmin();
+    }
+
+    // Webhook Logs collection - Payment webhooks
+    match /webhookLogs/{logId} {
+      // Only backend and admins can write webhook logs
+      allow read, write: if isAdmin();
+    }
+
+    // ============================ RATE LIMITING ============================
+
+    // Global rate limiting: 1 second between writes per authenticated user
+    match /{document=**} {
+      allow write: if isAuthenticated() &&
+        (request.auth.token.lastWriteTime == null ||
+         (request.time.toMillis() - request.auth.token.lastWriteTime.toMillis()) > 1000);
+    }
+
+    // ============================ APPLICATION NOTIFICATIONS ============================
+
+    // Application Notifications collection - Admin-controlled banners in app
+    match /applicationNotifications/{notificationId} {
+      // Only admins can manage notifications
+      allow read, write: if isAdmin();
+    }
+
+    // ============================ END PRODUCTION RULES ============================
+  }
+}

@@ -1,0 +1,2977 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Givta — Admin Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  /* ── TOKENS ────────────────────────────────────── */
+  :root {
+    --purple:    #4B0082;
+    --purple-md: #6A0DAD;
+    --purple-lt: #9B59B6;
+    --purple-bg: #F3EBF9;
+    --accent:    #FF6B35;
+    --green:     #00C48C;
+    --red:       #FF4D4D;
+    --yellow:    #FFB800;
+    --blue:      #2196F3;
+
+    --bg:        #F6F4FA;
+    --surface:   #FFFFFF;
+    --border:    #E8E0F0;
+    --text:      #1A1A2E;
+    --muted:     #6B6B8A;
+    --sidebar-w: 240px;
+
+    --radius:    10px;
+    --shadow:    0 2px 12px rgba(75,0,130,.08);
+    --shadow-lg: 0 8px 32px rgba(75,0,130,.14);
+  }
+
+  /* ── RESET ──────────────────────────────────────── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { font-size: 14px; }
+  body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); display: flex; min-height: 100vh; overflow-x: hidden; }
+  a { color: inherit; text-decoration: none; }
+  button { cursor: pointer; font-family: inherit; }
+  input, select, textarea { font-family: inherit; }
+  ul { list-style: none; }
+
+  /* ── SIDEBAR ─────────────────────────────────────── */
+  .sidebar {
+    width: var(--sidebar-w);
+    background: var(--purple);
+    display: flex; flex-direction: column;
+    position: fixed; top: 0; left: 0; height: 100vh;
+    z-index: 100; transition: transform .3s;
+  }
+  .sidebar-logo {
+    padding: 22px 20px 16px;
+    border-bottom: 1px solid rgba(255,255,255,.12);
+    display: flex; align-items: center; gap: 10px;
+  }
+  .sidebar-logo .logo-icon {
+    width: 36px; height: 36px; border-radius: 9px;
+    background: linear-gradient(135deg, #FF6B35, #FFB800);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; font-weight: 700; color: #fff;
+    flex-shrink: 0;
+  }
+  .sidebar-logo .logo-text { font-size: 20px; font-weight: 700; color: #fff; letter-spacing: -.3px; }
+  .sidebar-logo .logo-sub { font-size: 10px; color: rgba(255,255,255,.5); letter-spacing: 1.5px; text-transform: uppercase; }
+
+  .nav-section { padding: 12px 10px 4px; font-size: 10px; color: rgba(255,255,255,.4); letter-spacing: 1.2px; text-transform: uppercase; }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 9px 14px; border-radius: 8px; margin: 1px 8px;
+    color: rgba(255,255,255,.7); font-size: 13px; font-weight: 500;
+    transition: all .15s; cursor: pointer; position: relative;
+  }
+  .nav-item:hover { background: rgba(255,255,255,.1); color: #fff; }
+  .nav-item.active { background: rgba(255,255,255,.18); color: #fff; }
+  .nav-item .nav-icon { width: 18px; text-align: center; font-size: 15px; }
+  .nav-badge {
+    margin-left: auto; background: var(--accent);
+    color: #fff; font-size: 10px; font-weight: 700;
+    padding: 2px 6px; border-radius: 10px; min-width: 20px; text-align: center;
+  }
+
+  .sidebar-bottom {
+    margin-top: auto; padding: 16px;
+    border-top: 1px solid rgba(255,255,255,.1);
+  }
+  .admin-profile {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px; border-radius: 8px;
+    background: rgba(255,255,255,.08); cursor: pointer;
+  }
+  .admin-avatar {
+    width: 34px; height: 34px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), var(--yellow));
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-size: 14px; font-weight: 700;
+  }
+  .admin-name { color: #fff; font-size: 13px; font-weight: 600; }
+  .admin-role { color: rgba(255,255,255,.5); font-size: 11px; }
+
+  /* ── MAIN ────────────────────────────────────────── */
+  .main {
+    margin-left: var(--sidebar-w);
+    flex: 1; display: flex; flex-direction: column;
+    min-height: 100vh;
+  }
+
+  /* ── TOPBAR ──────────────────────────────────────── */
+  .topbar {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    height: 58px; display: flex; align-items: center; gap: 16px;
+    position: sticky; top: 0; z-index: 50;
+  }
+  .page-title { font-size: 16px; font-weight: 700; color: var(--text); }
+  .page-sub { font-size: 12px; color: var(--muted); margin-top: 1px; }
+  .topbar-actions { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+  .topbar-btn {
+    width: 36px; height: 36px; border-radius: 8px;
+    border: 1px solid var(--border); background: var(--surface);
+    display: flex; align-items: center; justify-content: center;
+    color: var(--muted); font-size: 16px; transition: all .15s;
+    position: relative;
+  }
+  .topbar-btn:hover { border-color: var(--purple-lt); color: var(--purple); }
+  .notif-dot {
+    position: absolute; top: 6px; right: 6px;
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--accent); border: 1.5px solid var(--surface);
+  }
+
+  /* ── PAGES ───────────────────────────────────────── */
+  .page { display: none; padding: 24px; flex-direction: column; gap: 20px; }
+  .page.active { display: flex; }
+
+  /* ── STAT CARDS ──────────────────────────────────── */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 14px;
+  }
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px 20px;
+    display: flex; flex-direction: column; gap: 8px;
+    box-shadow: var(--shadow);
+    position: relative; overflow: hidden;
+  }
+  .stat-card::after {
+    content: '';
+    position: absolute; bottom: 0; left: 0; right: 0; height: 3px;
+  }
+  .stat-card.purple::after { background: var(--purple); }
+  .stat-card.green::after  { background: var(--green); }
+  .stat-card.orange::after { background: var(--accent); }
+  .stat-card.yellow::after { background: var(--yellow); }
+  .stat-card.blue::after   { background: var(--blue); }
+  .stat-card.red::after    { background: var(--red); }
+
+  .stat-icon {
+    width: 38px; height: 38px; border-radius: 9px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+  }
+  .stat-icon.purple { background: var(--purple-bg); color: var(--purple); }
+  .stat-icon.green  { background: #E6FBF4; color: var(--green); }
+  .stat-icon.orange { background: #FFF0E8; color: var(--accent); }
+  .stat-icon.yellow { background: #FFF8E0; color: var(--yellow); }
+  .stat-icon.blue   { background: #E8F4FE; color: var(--blue); }
+  .stat-icon.red    { background: #FFE8E8; color: var(--red); }
+
+  .stat-label { font-size: 11px; color: var(--muted); font-weight: 500; text-transform: uppercase; letter-spacing: .5px; }
+  .stat-value { font-size: 24px; font-weight: 700; font-family: 'JetBrains Mono', monospace; color: var(--text); }
+  .stat-delta { font-size: 11px; font-weight: 500; }
+  .stat-delta.up   { color: var(--green); }
+  .stat-delta.down { color: var(--red); }
+
+  /* ── CARD ────────────────────────────────────────── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+  .card-head {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 12px;
+  }
+  .card-title { font-size: 14px; font-weight: 700; }
+  .card-sub { font-size: 12px; color: var(--muted); margin-top: 1px; }
+  .card-head-actions { margin-left: auto; display: flex; gap: 8px; }
+  .card-body { padding: 20px; }
+
+  /* ── TABLE ───────────────────────────────────────── */
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; }
+  thead th {
+    padding: 10px 14px;
+    text-align: left;
+    font-size: 11px; font-weight: 600;
+    color: var(--muted); text-transform: uppercase; letter-spacing: .5px;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  tbody tr { border-bottom: 1px solid var(--border); transition: background .1s; }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: var(--bg); }
+  td { padding: 11px 14px; font-size: 13px; vertical-align: middle; white-space: nowrap; }
+
+  /* ── BADGE ───────────────────────────────────────── */
+  .badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 3px 9px; border-radius: 20px;
+    font-size: 11px; font-weight: 600; white-space: nowrap;
+  }
+  .badge-dot { width: 6px; height: 6px; border-radius: 50%; }
+  .badge.green  { background: #E6FBF4; color: #00875A; }
+  .badge.red    { background: #FFE8E8; color: #CC0000; }
+  .badge.yellow { background: #FFF8E0; color: #996600; }
+  .badge.blue   { background: #E8F4FE; color: #0066CC; }
+  .badge.purple { background: var(--purple-bg); color: var(--purple); }
+  .badge.gray   { background: #F0F0F5; color: #666; }
+
+  /* ── BUTTONS ─────────────────────────────────────── */
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 7px 14px; border-radius: 7px;
+    font-size: 13px; font-weight: 600; border: none;
+    transition: all .15s; white-space: nowrap;
+  }
+  .btn-primary { background: var(--purple); color: #fff; }
+  .btn-primary:hover { background: var(--purple-md); }
+  .btn-success { background: var(--green); color: #fff; }
+  .btn-success:hover { filter: brightness(1.08); }
+  .btn-danger  { background: var(--red); color: #fff; }
+  .btn-danger:hover  { filter: brightness(1.08); }
+  .btn-outline {
+    background: transparent; color: var(--text);
+    border: 1px solid var(--border);
+  }
+  .btn-outline:hover { border-color: var(--purple-lt); color: var(--purple); }
+  .btn-sm { padding: 5px 10px; font-size: 12px; }
+  .btn-xs { padding: 3px 8px; font-size: 11px; border-radius: 5px; }
+
+  /* ── FORM ────────────────────────────────────────── */
+  .form-group { display: flex; flex-direction: column; gap: 6px; }
+  .form-label { font-size: 12px; font-weight: 600; color: var(--text); }
+  .form-input, .form-select, .form-textarea {
+    padding: 9px 12px; border-radius: 7px;
+    border: 1.5px solid var(--border); background: var(--surface);
+    font-size: 13px; color: var(--text);
+    transition: border-color .15s; outline: none;
+    width: 100%;
+  }
+  .form-input:focus, .form-select:focus, .form-textarea:focus {
+    border-color: var(--purple-lt);
+  }
+  .form-textarea { resize: vertical; min-height: 90px; }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+
+  /* ── TOGGLE ──────────────────────────────────────── */
+  .toggle-wrap {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 0; border-bottom: 1px solid var(--border);
+  }
+  .toggle-wrap:last-child { border-bottom: none; }
+  .toggle-info .toggle-label { font-size: 13px; font-weight: 600; }
+  .toggle-info .toggle-desc  { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .toggle {
+    position: relative; width: 44px; height: 24px;
+    flex-shrink: 0;
+  }
+  .toggle input { opacity: 0; width: 0; height: 0; }
+  .toggle-slider {
+    position: absolute; inset: 0;
+    background: #D0D0E0; border-radius: 12px;
+    cursor: pointer; transition: .25s;
+  }
+  .toggle-slider::before {
+    content: ''; position: absolute;
+    width: 18px; height: 18px; border-radius: 50%;
+    background: #fff; left: 3px; top: 3px;
+    transition: .25s; box-shadow: 0 1px 4px rgba(0,0,0,.15);
+  }
+  .toggle input:checked + .toggle-slider { background: var(--green); }
+  .toggle input:checked + .toggle-slider::before { transform: translateX(20px); }
+  .toggle.purple input:checked + .toggle-slider { background: var(--purple); }
+
+  /* ── SEARCH / FILTER BAR ─────────────────────────── */
+  .filter-bar {
+    display: flex; gap: 10px; align-items: center;
+    padding: 14px 20px; border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+  }
+  .search-wrap {
+    flex: 1; min-width: 180px; position: relative;
+  }
+  .search-wrap input {
+    width: 100%; padding: 8px 12px 8px 34px;
+    border: 1.5px solid var(--border); border-radius: 7px;
+    font-size: 13px; outline: none; transition: border-color .15s;
+    background: var(--bg);
+  }
+  .search-wrap input:focus { border-color: var(--purple-lt); background: var(--surface); }
+  .search-icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); font-size: 14px; color: var(--muted); }
+
+  /* ── PAGINATION ──────────────────────────────────── */
+  .pagination { display: flex; align-items: center; gap: 4px; padding: 14px 20px; }
+  .page-info { font-size: 12px; color: var(--muted); margin-right: auto; }
+  .pag-btn {
+    min-width: 30px; height: 30px; border-radius: 6px;
+    border: 1px solid var(--border); background: var(--surface);
+    font-size: 12px; font-weight: 600; color: var(--muted);
+    display: flex; align-items: center; justify-content: center;
+    transition: all .15s;
+  }
+  .pag-btn:hover, .pag-btn.active {
+    background: var(--purple); color: #fff; border-color: var(--purple);
+  }
+
+  /* ── WITHDRAWAL ITEM ─────────────────────────────── */
+  .withdraw-item {
+    display: flex; align-items: center; gap: 14px;
+    padding: 14px 20px; border-bottom: 1px solid var(--border);
+    transition: background .1s;
+  }
+  .withdraw-item:last-child { border-bottom: none; }
+  .withdraw-item:hover { background: var(--bg); }
+  .withdraw-avatar {
+    width: 38px; height: 38px; border-radius: 50%;
+    background: var(--purple-bg); display: flex; align-items: center;
+    justify-content: center; font-size: 14px; font-weight: 700; color: var(--purple);
+    flex-shrink: 0;
+  }
+  .withdraw-info { flex: 1; min-width: 0; }
+  .withdraw-name { font-size: 13px; font-weight: 600; }
+  .withdraw-meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .withdraw-amount { font-family: 'JetBrains Mono', monospace; font-size: 15px; font-weight: 700; color: var(--text); margin-right: 14px; }
+  .withdraw-actions { display: flex; gap: 6px; }
+
+  /* ── CHART BAR ────────────────────────────────────── */
+  .mini-bar-chart { display: flex; align-items: flex-end; gap: 4px; height: 60px; }
+  .bar-col { flex: 1; background: var(--purple-bg); border-radius: 3px 3px 0 0; min-height: 4px; transition: background .2s; }
+  .bar-col:hover { background: var(--purple-lt); }
+
+  /* ── ACTIVITY FEED ────────────────────────────────── */
+  .activity-item {
+    display: flex; gap: 12px; padding: 12px 20px;
+    border-bottom: 1px solid var(--border);
+  }
+  .activity-item:last-child { border-bottom: none; }
+  .activity-dot {
+    width: 10px; height: 10px; border-radius: 50%;
+    margin-top: 5px; flex-shrink: 0;
+  }
+  .activity-dot.green  { background: var(--green); }
+  .activity-dot.red    { background: var(--red); }
+  .activity-dot.yellow { background: var(--yellow); }
+  .activity-dot.blue   { background: var(--blue); }
+  .activity-dot.purple { background: var(--purple); }
+  .activity-text { font-size: 13px; line-height: 1.5; }
+  .activity-time { font-size: 11px; color: var(--muted); margin-top: 3px; }
+
+  /* ── USER DETAIL ──────────────────────────────────── */
+  .user-detail-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+    display: flex; gap: 20px; align-items: flex-start;
+  }
+  .user-big-avatar {
+    width: 64px; height: 64px; border-radius: 16px;
+    background: var(--purple-bg);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 26px; font-weight: 700; color: var(--purple);
+    flex-shrink: 0;
+  }
+  .user-detail-info { flex: 1; }
+  .user-detail-name { font-size: 18px; font-weight: 700; }
+  .user-detail-meta { font-size: 12px; color: var(--muted); margin-top: 4px; }
+  .user-stats-row { display: flex; gap: 24px; margin-top: 14px; flex-wrap: wrap; }
+  .user-stat-item .label { font-size: 11px; color: var(--muted); }
+  .user-stat-item .value { font-size: 16px; font-weight: 700; font-family: 'JetBrains Mono', monospace; }
+
+  /* ── ANNOUNCEMENT ─────────────────────────────────── */
+  .announcement-item {
+    border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 16px 18px; display: flex; gap: 14px; align-items: flex-start;
+    background: var(--surface); transition: box-shadow .15s;
+  }
+  .announcement-item:hover { box-shadow: var(--shadow); }
+  .ann-icon {
+    width: 40px; height: 40px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; flex-shrink: 0;
+  }
+  .ann-icon.info   { background: #E8F4FE; }
+  .ann-icon.success{ background: #E6FBF4; }
+  .ann-icon.warning{ background: #FFF8E0; }
+  .ann-icon.danger { background: #FFE8E8; }
+  .ann-content { flex: 1; }
+  .ann-title { font-size: 14px; font-weight: 700; }
+  .ann-body  { font-size: 13px; color: var(--muted); margin-top: 4px; line-height: 1.5; }
+  .ann-link  { font-size: 12px; color: var(--purple); margin-top: 6px; display: flex; align-items: center; gap: 4px; word-break: break-all; }
+  .ann-meta  { font-size: 11px; color: var(--muted); margin-top: 8px; display: flex; gap: 10px; flex-wrap: wrap; }
+  .ann-actions { display: flex; gap: 6px; margin-left: auto; align-items: flex-start; flex-shrink: 0; }
+
+  /* ── MODAL ────────────────────────────────────────── */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,.45);
+    z-index: 200; display: flex; align-items: center; justify-content: center;
+    opacity: 0; pointer-events: none; transition: opacity .2s;
+  }
+  .modal-overlay.open { opacity: 1; pointer-events: all; }
+  .modal {
+    background: var(--surface); border-radius: 14px;
+    width: 520px; max-width: 95vw; max-height: 90vh;
+    box-shadow: var(--shadow-lg); overflow-y: auto;
+    transform: translateY(20px); transition: transform .2s;
+  }
+  .modal-overlay.open .modal { transform: translateY(0); }
+  .modal-head {
+    padding: 20px 24px 16px; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .modal-title { font-size: 16px; font-weight: 700; }
+  .modal-close {
+    width: 30px; height: 30px; border-radius: 6px;
+    border: 1px solid var(--border); background: transparent;
+    font-size: 16px; color: var(--muted); display: flex;
+    align-items: center; justify-content: center;
+  }
+  .modal-close:hover { background: var(--bg); }
+  .modal-body { padding: 20px 24px; display: flex; flex-direction: column; gap: 16px; }
+  .modal-footer { padding: 16px 24px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 10px; }
+
+  /* ── SETTINGS SECTION ─────────────────────────────── */
+  .settings-section { display: flex; flex-direction: column; gap: 14px; }
+  .settings-section .section-title {
+    font-size: 13px; font-weight: 700; color: var(--text);
+    padding-bottom: 10px; border-bottom: 1px solid var(--border);
+  }
+
+  /* ── TOAST ────────────────────────────────────────── */
+  .toast-container {
+    position: fixed; bottom: 24px; right: 24px;
+    display: flex; flex-direction: column; gap: 8px; z-index: 999;
+  }
+  .toast {
+    background: var(--text); color: #fff;
+    padding: 12px 18px; border-radius: 9px;
+    font-size: 13px; font-weight: 500;
+    box-shadow: var(--shadow-lg);
+    display: flex; align-items: center; gap: 10px;
+    animation: slideUp .25s ease;
+    max-width: 320px;
+  }
+  .toast.success { background: var(--green); }
+  .toast.error   { background: var(--red); }
+  .toast.warning { background: var(--yellow); color: var(--text); }
+  @keyframes slideUp { from { transform: translateY(12px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+  /* ── MISC ─────────────────────────────────────────── */
+  .divider { height: 1px; background: var(--border); margin: 6px 0; }
+  .row { display: flex; gap: 14px; }
+  .col { flex: 1; min-width: 0; }
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+  .empty-state { text-align: center; padding: 40px; color: var(--muted); font-size: 13px; }
+  .empty-icon { font-size: 36px; margin-bottom: 10px; }
+  .tag { display: inline-block; padding: 2px 7px; border-radius: 4px; font-size: 10px; font-weight: 600; background: var(--purple-bg); color: var(--purple); }
+  .mono { font-family: 'JetBrains Mono', monospace; }
+  .text-muted { color: var(--muted); }
+  .text-right { text-align: right; }
+  .fw6 { font-weight: 600; }
+  .fw7 { font-weight: 700; }
+  .gap-8 { gap: 8px; }
+  .mt-4 { margin-top: 4px; }
+  .mt-8 { margin-top: 8px; }
+  .mt-16 { margin-top: 16px; }
+  .inline-flex { display: inline-flex; align-items: center; gap: 6px; }
+
+  /* ── ALERT BOX ────────────────────────────────────── */
+  .alert {
+    padding: 12px 16px; border-radius: 8px;
+    font-size: 13px; display: flex; align-items: flex-start; gap: 10px;
+  }
+  .alert.info    { background: #E8F4FE; color: #0055A5; border-left: 3px solid var(--blue); }
+  .alert.warning { background: #FFF8E0; color: #7A5800; border-left: 3px solid var(--yellow); }
+  .alert.success { background: #E6FBF4; color: #005A3C; border-left: 3px solid var(--green); }
+  .alert.danger  { background: #FFE8E8; color: #A50000; border-left: 3px solid var(--red); }
+
+  /* ── KYCREQUESTS ──────────────────────────────────── */
+  .kyc-doc-preview {
+    width: 100%; padding: 16px; border: 1px dashed var(--border);
+    border-radius: 8px; text-align: center; color: var(--muted);
+    font-size: 12px; background: var(--bg);
+  }
+
+  /* scroll */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+  @media (max-width: 860px) {
+    .sidebar { transform: translateX(-100%); }
+    .sidebar.open { transform: none; }
+    .main { margin-left: 0; }
+    .two-col, .three-col, .form-row, .form-row-3 { grid-template-columns: 1fr; }
+    .stats-grid { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ────────────────────────── SIDEBAR ──────────────────────────── -->
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-icon">G</div>
+    <div>
+      <div class="logo-text">Givta</div>
+      <div class="logo-sub">Admin Panel</div>
+    </div>
+  </div>
+
+  <div style="overflow-y:auto; flex:1; padding-bottom:8px;">
+    <div class="nav-section">Overview</div>
+    <div class="nav-item active" onclick="goPage('overview',this)">
+      <span class="nav-icon">📊</span> Dashboard
+    </div>
+    <div class="nav-item" onclick="goPage('analytics',this)">
+      <span class="nav-icon">📈</span> Analytics
+    </div>
+
+    <div class="nav-section">Finance</div>
+    <div class="nav-item" onclick="goPage('withdrawals',this)">
+      <span class="nav-icon">💸</span> Withdrawals
+      <span class="nav-badge" id="badge-wd">0</span>
+    </div>
+    <div class="nav-item" onclick="goPage('deposits',this)">
+      <span class="nav-icon">💰</span> Deposits
+    </div>
+    <div class="nav-item" onclick="goPage('transactions',this)">
+      <span class="nav-icon">🔄</span> Transactions
+    </div>
+    <div class="nav-item" onclick="goPage('wallets',this)">
+      <span class="nav-icon">👛</span> User Wallets
+    </div>
+
+    <div class="nav-section">Users</div>
+    <div class="nav-item" onclick="goPage('users',this)">
+      <span class="nav-icon">👥</span> All Users
+    </div>
+    <div class="nav-item" onclick="goPage('kyc',this)">
+      <span class="nav-icon">🆔</span> KYC Requests
+      <span class="nav-badge" id="badge-kyc">0</span>
+    </div>
+
+    <div class="nav-section">Content</div>
+    <div class="nav-item" onclick="goPage('announcements',this)">
+      <span class="nav-icon">📣</span> Announcements
+    </div>
+    <div class="nav-item" onclick="goPage('tips',this)">
+      <span class="nav-icon">🎁</span> Tips & Links
+    </div>
+
+    <div class="nav-section">System</div>
+    <div class="nav-item" onclick="goPage('settings',this)">
+      <span class="nav-icon">⚙️</span> Settings
+    </div>
+    <div class="nav-item" onclick="goPage('logs',this)">
+      <span class="nav-icon">📋</span> System Logs
+    </div>
+    <div class="nav-item" onclick="goPage('health',this)">
+      <span class="nav-icon">🩺</span> System Health
+    </div>
+  </div>
+
+  <div class="sidebar-bottom">
+    <div class="admin-profile">
+      <div class="admin-avatar">A</div>
+      <div>
+        <div class="admin-name">Admin</div>
+        <div class="admin-role">Super Admin</div>
+      </div>
+      <span style="margin-left:auto;color:rgba(255,255,255,.4);font-size:16px;">⚙</span>
+    </div>
+  </div>
+</nav>
+
+<!-- ────────────────────────── MAIN ──────────────────────────────── -->
+<div class="main">
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <button class="topbar-btn" onclick="document.getElementById('sidebar').classList.toggle('open')" style="display:none;border:none;" id="menuBtn">☰</button>
+    <div>
+      <div class="page-title" id="pageTitle">Dashboard</div>
+      <div class="page-sub" id="pageSubtitle">Welcome back — here's what's happening</div>
+    </div>
+    <div class="topbar-actions">
+      <button class="topbar-btn" title="Search">🔍</button>
+      <button class="topbar-btn" title="Notifications">
+        🔔 <span class="notif-dot"></span>
+      </button>
+      <button class="topbar-btn btn-primary" style="width:auto;padding:0 14px;font-size:12px;font-weight:600;color:#fff;" onclick="refreshData()">↺ Refresh</button>
+    </div>
+  </div>
+
+  <!-- ═══════════════════ PAGE: OVERVIEW ═══════════════════ -->
+  <div class="page active" id="page-overview">
+    <div class="stats-grid" id="statsGrid">
+      <div class="stat-card purple">
+        <div class="stat-icon purple">👥</div>
+        <div class="stat-label">Total Users</div>
+        <div class="stat-value" id="stat-users">—</div>
+        <div class="stat-delta up" id="stat-users-d">Loading…</div>
+      </div>
+      <div class="stat-card green">
+        <div class="stat-icon green">💰</div>
+        <div class="stat-label">Total Wallet Balance</div>
+        <div class="stat-value" id="stat-balance">—</div>
+        <div class="stat-delta up" id="stat-balance-d">NGN</div>
+      </div>
+      <div class="stat-card orange">
+        <div class="stat-icon orange">🔄</div>
+        <div class="stat-label">Today's Transactions</div>
+        <div class="stat-value" id="stat-txtoday">—</div>
+        <div class="stat-delta" id="stat-txtoday-d">Today</div>
+      </div>
+      <div class="stat-card yellow">
+        <div class="stat-icon yellow">🎁</div>
+        <div class="stat-label">Total Tip Volume</div>
+        <div class="stat-value" id="stat-tipvol">—</div>
+        <div class="stat-delta up">Platform</div>
+      </div>
+      <div class="stat-card blue">
+        <div class="stat-icon blue">💸</div>
+        <div class="stat-label">Pending Withdrawals</div>
+        <div class="stat-value" id="stat-pendwd">—</div>
+        <div class="stat-delta yellow" id="stat-pendwd-d">Awaiting approval</div>
+      </div>
+      <div class="stat-card red">
+        <div class="stat-icon red">🆔</div>
+        <div class="stat-label">KYC Pending</div>
+        <div class="stat-value" id="stat-kyc">—</div>
+        <div class="stat-delta">Needs review</div>
+      </div>
+    </div>
+
+    <div class="two-col">
+      <!-- Recent Withdrawals Preview -->
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <div class="card-title">⏳ Pending Withdrawals</div>
+            <div class="card-sub">Awaiting manual approval</div>
+          </div>
+          <div class="card-head-actions">
+            <button class="btn btn-outline btn-sm" onclick="goPage('withdrawals', document.querySelector('[onclick*=\"withdrawals\"]'))">View All</button>
+          </div>
+        </div>
+        <div id="overviewWithdrawals">
+          <div class="empty-state"><div class="empty-icon">⏳</div>Loading…</div>
+        </div>
+      </div>
+
+      <!-- Activity Feed -->
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <div class="card-title">⚡ Recent Activity</div>
+            <div class="card-sub">Latest platform events</div>
+          </div>
+        </div>
+        <div id="activityFeed">
+          <div class="empty-state"><div class="empty-icon">⚡</div>Loading…</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Credit / Debit -->
+    <div class="card">
+      <div class="card-head">
+        <div class="card-title">💳 Quick Wallet Credit</div>
+        <div class="card-sub" style="margin-left:auto;color:var(--muted);font-size:12px;">Manually credit a user's wallet</div>
+      </div>
+      <div class="card-body">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">User ID or Username</label>
+            <input class="form-input" id="creditUserId" placeholder="user_abc123 or @username">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Amount (₦)</label>
+            <input class="form-input" id="creditAmount" type="number" placeholder="e.g. 5000" min="1">
+          </div>
+        </div>
+        <div class="form-group mt-8">
+          <label class="form-label">Description / Reason</label>
+          <input class="form-input" id="creditDesc" placeholder="Reason for credit…">
+        </div>
+        <div style="margin-top:14px;display:flex;gap:10px;">
+          <button class="btn btn-success" onclick="creditWallet()">✅ Credit Wallet</button>
+          <button class="btn btn-outline" onclick="clearCredit()">Clear</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════ PAGE: ANALYTICS ═══════════════════ -->
+  <div class="page" id="page-analytics">
+    <div class="three-col">
+      <div class="stat-card purple">
+        <div class="stat-icon purple">📦</div>
+        <div class="stat-label">24h Transactions</div>
+        <div class="stat-value" id="an-tx24">—</div>
+      </div>
+      <div class="stat-card green">
+        <div class="stat-icon green">💵</div>
+        <div class="stat-label">24h Volume (₦)</div>
+        <div class="stat-value" id="an-vol24">—</div>
+      </div>
+      <div class="stat-card orange">
+        <div class="stat-icon orange">👤</div>
+        <div class="stat-label">Active Users (24h)</div>
+        <div class="stat-value" id="an-u24">—</div>
+      </div>
+    </div>
+
+    <div class="two-col">
+      <div class="card">
+        <div class="card-head">
+          <div class="card-title">🎁 Tipping Activity (30d)</div>
+        </div>
+        <div class="card-body" id="tippingCard">
+          <div class="empty-state">Loading…</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head">
+          <div class="card-title">💰 Platform Earnings</div>
+        </div>
+        <div class="card-body" id="earningsCard">
+          <div class="empty-state">Loading…</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <div class="card-title">🏆 Referral Leaderboard</div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>#</th><th>Username</th><th>Total Referrals</th><th>Bonus Earned</th></tr></thead>
+          <tbody id="referralTable"><tr><td colspan="4" class="empty-state">Loading…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════ PAGE: WITHDRAWALS ═══════════════════ -->
+  <div class="page" id="page-withdrawals">
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <div class="card-title">💸 Withdrawal Requests</div>
+          <div class="card-sub">Manage pending and processed withdrawals</div>
+        </div>
+        <div class="card-head-actions">
+          <!-- Auto/Manual Switch -->
+          <div style="display:flex;align-items:center;gap:8px;padding:6px 12px;background:var(--bg);border-radius:8px;border:1px solid var(--border);">
+            <span style="font-size:12px;font-weight:600;">Auto Withdraw</span>
+            <label class="toggle">
+              <input type="checkbox" id="autoWithdrawToggle" onchange="toggleAutoWithdraw(this)">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+      </div>
+      <div class="filter-bar">
+        <div class="search-wrap">
+          <span class="search-icon">🔍</span>
+          <input type="text" placeholder="Search by username, amount…" oninput="filterWithdrawals(this.value)" id="wdSearch">
+        </div>
+        <select class="form-select" style="width:auto;padding:8px 10px;" onchange="loadWithdrawals(this.value)" id="wdStatusFilter">
+          <option value="pending">Pending</option>
+          <option value="completed">Completed</option>
+          <option value="failed">Failed</option>
+          <option value="">All</option>
+        </select>
+      </div>
+      <div id="withdrawalsList">
+        <div class="empty-state"><div class="empty-icon">💸</div>Loading withdrawals…</div>
+      </div>
+      <div class="pagination">
+        <span class="page-info" id="wdPagInfo">—</span>
+        <button class="pag-btn">‹</button>
+        <button class="pag-btn active">1</button>
+        <button class="pag-btn">2</button>
+        <button class="pag-btn">›</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════ PAGE: DEPOSITS ═══════════════════ -->
+  <div class="page" id="page-deposits">
+    <div class="card">
+      <div class="card-head">
+        <div class="card-title">💰 Deposit History</div>
+        <div class="card-sub" style="margin-left:auto;font-size:12px;color:var(--muted);">All platform deposits</div>
+      </div>
+      <div class="filter-bar">
+        <div class="search-wrap">
+          <span class="search-icon">🔍</span>
+          <input type="text" placeholder="Search deposits…" oninput="filterDeposits(this.value)">
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Ref</th><th>User</th><th>Amount</th><th>Method</th><th>Status</th><th>Date</th></tr></thead>
+          <tbody id="depositsTable"><tr><td colspan="6" class="empty-state">Loading…</td></tr></tbody>
+        </table>
+      </div>
+      <div class="pagination"><span class="page-info" id="depPagInfo">—</span></div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════ PAGE: TRANSACTIONS ═══════════════════ -->
+  <div class="page" id="page-transactions">
+    <div class="card">
+      <div class="card-head">
+        <div class="card-title">🔄 All Transactions</div>
+      </div>
+      <div class="filter-bar">
+        <div class="search-wrap">
+          <span class="search-icon">🔍</span>
+          <input type="text" placeholder="Search transactions…" oninput="filterTransactions(this.value)">
+        </div>
+        <select class="form-select" style="width:auto;padding:8px 10px;" onchange="loadTransactions(this.value)" id="txTypeFilter">
+          <option value="">All Types</option>
+          <option value="deposit">Deposit</option>
+          <option value="withdrawal">Withdrawal</option>
+          <option value="tip_sent">Tip Sent</option>
+          <option value="tip_received">Tip Received</option>
+          <option value="referral_bonus">Referral Bonus</option>
+          <option value="fee">Fee</option>
+        </select>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>ID</th><th>User</th><th>Type</th><th>Amount</th><th>Status</th><th>Date</th><th>Action</th></tr></thead>
+          <tbody id="txTable"><tr><td colspan="7" class="empty-state">Loading…</td></tr></tbody>
+        </table>
+      </div>
+      <div class="pagination"><span class="page-info" id="txPagInfo">—</span></div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════ PAGE: USER WALLETS ═══════════════════ -->
+  <div class="page" id="page-wallets">
+    <div class="card">
+      <div class="card-head">
+        <div class="card-title">👛 User Wallets</div>
+        <div class="card-sub" style="margin-left:auto;font-size:12px;color:var(--muted);">All user balances and wallet stats</div>
+      </div>
+      <div class="filter-bar">
+        <div class="search-wrap">
+          <span class="search-icon">🔍</span>
+          <input type="text" placeholder="Search by user…" oninput="filterWallets(this.value)">
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>User</th><th>Balance</th><th>Total Deposits</th><th>Total Withdrawals</th><th>Tips Received</th><th>Referral Earnings</th><th>Status</th></tr></thead>
+          <tbody id="walletsTable"><tr><td colspan="7" class="empty-state">Loading…</td></tr></tbody>
+        </table>
+      </div>
+      <div class="pagination"><span class="page-info" id="walPagInfo">—</span></div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════ PAGE: USERS ═══════════════════ -->
+  <div class="page" id="page-users">
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <div class="card-title">👥 All Users</div>
+          <div class="card-sub">Manage user accounts</div>
+        </div>
+        <div class="card-head-actions">
+          <button class="btn btn-primary btn-sm" onclick="openModal('createUserModal')">+ New User</button>
+        </div>
+      </div>
+      <div class="filter-bar">
+        <div class="search-wrap">
+          <span class="search-icon">🔍</span>
+          <input type="text" placeholder="Search username, email, phone…" oninput="filterUsers(this.value)" id="userSearch">
+        </div>
+        <select class="form-select" style="width:auto;padding:8px 10px;" onchange="loadUsers(undefined,this.value)" id="userKycFilter">
+          <option value="">All KYC</option>
+          <option value="pending">KYC Pending</option>
+          <option value="verified">KYC Verified</option>
+          <option value="rejected">KYC Rejected</option>
+          <option value="not_submitted">Not Submitted</option>
+        </select>
+        <select class="form-select" style="width:auto;padding:8px 10px;" onchange="loadUsers(this.value)" id="userActiveFilter">
+          <option value="">All Status</option>
+          <option value="true">Active</option>
+          <option value="false">Inactive</option>
+        </select>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>User</th><th>Email / Phone</th><th>KYC</th><th>Status</th><th>Referrals</th><th>Joined</th><th>Actions</th></tr></thead>
+          <tbody id="usersTable"><tr><td colspan="7" class="empty-state">Loading…</td></tr></tbody>
+        </table>
+      </div>
+      <div class="pagination"><span class="page-info" id="uPagInfo">—</span></div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════ PAGE: KYC ═══════════════════ -->
+  <div class="page" id="page-kyc">
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <div class="card-title">🆔 KYC Requests</div>
+          <div class="card-sub">Review and approve identity verification</div>
+        </div>
+      </div>
+      <div class="filter-bar">
+        <div class="search-wrap">
+          <span class="search-icon">🔍</span>
+          <input type="text" placeholder="Search…" oninput="filterKyc(this.value)">
+        </div>
+        <select class="form-select" style="width:auto;padding:8px 10px;" onchange="loadKyc(this.value)" id="kycStatusFilter">
+          <option value="pending">Pending</option>
+          <option value="approved">Approved</option>
+          <option value="rejected">Rejected</option>
+          <option value="">All</option>
+        </select>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>User</th><th>Document Type</th><th>Submitted</th><th>Status</th><th>Actions</th></tr></thead>
+          <tbody id="kycTable"><tr><td colspan="5" class="empty-state">Loading…</td></tr></tbody>
+        </table>
+      </div>
+      <div class="pagination"><span class="page-info" id="kycPagInfo">—</span></div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════ PAGE: ANNOUNCEMENTS ═══════════════════ -->
+  <div class="page" id="page-announcements">
+    <!-- Create New -->
+    <div class="card">
+      <div class="card-head">
+        <div class="card-title">📣 Broadcast Announcement</div>
+        <div class="card-sub" style="margin-left:auto;font-size:12px;color:var(--muted);">Sends push + in-app notification to users</div>
+      </div>
+      <div class="card-body">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Title</label>
+            <input class="form-input" id="annTitle" placeholder="Announcement title…">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Type</label>
+            <select class="form-select" id="annType">
+              <option value="info">ℹ️ Info</option>
+              <option value="success">✅ Success</option>
+              <option value="warning">⚠️ Warning</option>
+              <option value="danger">🚨 Alert</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group mt-8">
+          <label class="form-label">Message</label>
+          <textarea class="form-textarea" id="annBody" placeholder="Announcement body…"></textarea>
+        </div>
+        <div class="form-group mt-8">
+          <label class="form-label">Link (optional)</label>
+          <input class="form-input" id="annLink" placeholder="https://givta.app/some-page or givta://deep-link">
+        </div>
+        <div class="form-group mt-8">
+          <label class="form-label">Target Audience</label>
+          <select class="form-select" id="annAudience">
+            <option value="all">All Users</option>
+            <option value="verified">Verified Users Only</option>
+            <option value="unverified">Unverified Users</option>
+            <option value="active">Active Users</option>
+          </select>
+        </div>
+        <div style="margin-top:14px;display:flex;gap:10px;">
+          <button class="btn btn-primary" onclick="sendAnnouncement()">📤 Broadcast Now</button>
+          <button class="btn btn-outline" onclick="clearAnnouncement()">Clear</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- History -->
+    <div class="card">
+      <div class="card-head">
+        <div class="card-title">📜 Announcement History</div>
+      </div>
+      <div id="annList" style="padding:16px;display:flex;flex-direction:column;gap:12px;">
+        <div class="empty-state"><div class="empty-icon">📣</div>No announcements yet. Broadcast one above.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════ PAGE: TIPS & LINKS ═══════════════════ -->
+  <div class="page" id="page-tips">
+    <div class="card">
+      <div class="card-head">
+        <div class="card-title">🎁 Tips Overview</div>
+      </div>
+      <div class="filter-bar">
+        <div class="search-wrap">
+          <span class="search-icon">🔍</span>
+          <input type="text" placeholder="Search tips…" oninput="filterTips(this.value)">
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Sender</th><th>Recipient</th><th>Amount</th><th>Message</th><th>Date</th></tr></thead>
+          <tbody id="tipsTable"><tr><td colspan="5" class="empty-state">Loading…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════ PAGE: SETTINGS ═══════════════════ -->
+  <div class="page" id="page-settings">
+    <div class="two-col">
+      <!-- Payment Settings -->
+      <div class="card">
+        <div class="card-head"><div class="card-title">💳 Payment Settings</div></div>
+        <div class="card-body settings-section">
+          <div class="section-title">Withdrawal</div>
+          <div class="toggle-wrap">
+            <div class="toggle-info">
+              <div class="toggle-label">Instant Withdrawal</div>
+              <div class="toggle-desc">Allow users to withdraw instantly via Paystack</div>
+            </div>
+            <label class="toggle"><input type="checkbox" id="s-instantWd" checked><span class="toggle-slider"></span></label>
+          </div>
+          <div class="toggle-wrap">
+            <div class="toggle-info">
+              <div class="toggle-label">Auto Withdrawal</div>
+              <div class="toggle-desc">Process withdrawals automatically without admin review</div>
+            </div>
+            <label class="toggle"><input type="checkbox" id="s-autoWd"><span class="toggle-slider"></span></label>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Min Withdrawal (₦)</label>
+              <input class="form-input" id="s-minWd" value="500" type="number">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Max Withdrawal (₦)</label>
+              <input class="form-input" id="s-maxWd" value="1000000" type="number">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Withdrawal Fee (%)</label>
+            <input class="form-input" id="s-wdFee" value="1" type="number" step="0.1">
+          </div>
+
+          <div class="section-title mt-16">Tipping</div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Min Tip (₦)</label>
+              <input class="form-input" id="s-minTip" value="10" type="number">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Max Tip (₦)</label>
+              <input class="form-input" id="s-maxTip" value="100000" type="number">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Paystack Fee (%)</label>
+            <input class="form-input" id="s-psFee" value="1.5" type="number" step="0.1">
+          </div>
+        </div>
+      </div>
+
+      <!-- Feature Flags -->
+      <div class="card">
+        <div class="card-head"><div class="card-title">🚀 Feature Flags</div></div>
+        <div class="card-body settings-section">
+          <div class="section-title">App Features</div>
+          <div class="toggle-wrap">
+            <div class="toggle-info"><div class="toggle-label">Challenges</div><div class="toggle-desc">Enable challenge creation and participation</div></div>
+            <label class="toggle purple"><input type="checkbox" id="f-challenges" checked><span class="toggle-slider"></span></label>
+          </div>
+          <div class="toggle-wrap">
+            <div class="toggle-info"><div class="toggle-label">Sponsored Challenges</div><div class="toggle-desc">Allow brands to sponsor challenges</div></div>
+            <label class="toggle purple"><input type="checkbox" id="f-sponsored" checked><span class="toggle-slider"></span></label>
+          </div>
+          <div class="toggle-wrap">
+            <div class="toggle-info"><div class="toggle-label">Tipping Goals</div><div class="toggle-desc">Allow creators to set tipping goals</div></div>
+            <label class="toggle purple"><input type="checkbox" id="f-goals" checked><span class="toggle-slider"></span></label>
+          </div>
+          <div class="toggle-wrap">
+            <div class="toggle-info"><div class="toggle-label">Leaderboards</div><div class="toggle-desc">Weekly ranking and leaderboard system</div></div>
+            <label class="toggle purple"><input type="checkbox" id="f-leaderboard" checked><span class="toggle-slider"></span></label>
+          </div>
+          <div class="toggle-wrap">
+            <div class="toggle-info"><div class="toggle-label">Referral System</div><div class="toggle-desc">Multi-level referral bonus system</div></div>
+            <label class="toggle purple"><input type="checkbox" id="f-referrals" checked><span class="toggle-slider"></span></label>
+          </div>
+          <div class="toggle-wrap">
+            <div class="toggle-info"><div class="toggle-label">Gamification</div><div class="toggle-desc">Achievements, streaks, badges</div></div>
+            <label class="toggle purple"><input type="checkbox" id="f-gamification" checked><span class="toggle-slider"></span></label>
+          </div>
+          <div class="toggle-wrap">
+            <div class="toggle-info"><div class="toggle-label">Social Sharing</div><div class="toggle-desc">Share tips and challenges on social media</div></div>
+            <label class="toggle purple"><input type="checkbox" id="f-social" checked><span class="toggle-slider"></span></label>
+          </div>
+          <div class="toggle-wrap">
+            <div class="toggle-info"><div class="toggle-label">Affiliate Program</div><div class="toggle-desc">External affiliate link tracking</div></div>
+            <label class="toggle purple"><input type="checkbox" id="f-affiliate"><span class="toggle-slider"></span></label>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="two-col">
+      <!-- Security Settings -->
+      <div class="card">
+        <div class="card-head"><div class="card-title">🔐 Security Settings</div></div>
+        <div class="card-body settings-section">
+          <div class="toggle-wrap">
+            <div class="toggle-info"><div class="toggle-label">KYC Required</div><div class="toggle-desc">Require identity verification for all users</div></div>
+            <label class="toggle purple"><input type="checkbox" id="s-kycReq" checked><span class="toggle-slider"></span></label>
+          </div>
+          <div class="toggle-wrap">
+            <div class="toggle-info"><div class="toggle-label">Two-Factor Auth</div><div class="toggle-desc">Require 2FA for high-value withdrawals</div></div>
+            <label class="toggle purple"><input type="checkbox" id="s-2fa"><span class="toggle-slider"></span></label>
+          </div>
+          <div class="form-row mt-8">
+            <div class="form-group">
+              <label class="form-label">Max Login Attempts</label>
+              <input class="form-input" id="s-maxLogin" value="5" type="number">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Lockout Duration (min)</label>
+              <input class="form-input" id="s-lockout" value="15" type="number">
+            </div>
+          </div>
+          <div class="form-group mt-8">
+            <label class="form-label">KYC Required for Withdrawals Above (₦)</label>
+            <input class="form-input" id="s-kycWd" value="50000" type="number">
+          </div>
+        </div>
+      </div>
+
+      <!-- Notification Settings -->
+      <div class="card">
+        <div class="card-head"><div class="card-title">🔔 Notification Settings</div></div>
+        <div class="card-body settings-section">
+          <div class="toggle-wrap">
+            <div class="toggle-info"><div class="toggle-label">Email Notifications</div><div class="toggle-desc">Transactional and system emails</div></div>
+            <label class="toggle purple"><input type="checkbox" id="n-email" checked><span class="toggle-slider"></span></label>
+          </div>
+          <div class="toggle-wrap">
+            <div class="toggle-info"><div class="toggle-label">SMS Notifications</div><div class="toggle-desc">OTP and transaction SMS alerts</div></div>
+            <label class="toggle purple"><input type="checkbox" id="n-sms" checked><span class="toggle-slider"></span></label>
+          </div>
+          <div class="toggle-wrap">
+            <div class="toggle-info"><div class="toggle-label">Push Notifications</div><div class="toggle-desc">Mobile push via FCM</div></div>
+            <label class="toggle purple"><input type="checkbox" id="n-push" checked><span class="toggle-slider"></span></label>
+          </div>
+          <div class="toggle-wrap">
+            <div class="toggle-info"><div class="toggle-label">WhatsApp Notifications</div><div class="toggle-desc">Via Twilio WhatsApp integration</div></div>
+            <label class="toggle purple"><input type="checkbox" id="n-whatsapp" checked><span class="toggle-slider"></span></label>
+          </div>
+          <div class="form-group mt-8">
+            <label class="form-label">From Email Address</label>
+            <input class="form-input" id="n-fromEmail" value="noreply@givta.app">
+          </div>
+          <div class="form-group">
+            <label class="form-label">From Name</label>
+            <input class="form-input" id="n-fromName" value="Givta">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Gamification Settings -->
+    <div class="card">
+      <div class="card-head"><div class="card-title">🏅 Gamification Settings</div></div>
+      <div class="card-body">
+        <div class="form-row-3">
+          <div class="form-group">
+            <label class="form-label">🥇 1st Place Weekly Bonus (₦)</label>
+            <input class="form-input" id="g-1st" value="10000" type="number">
+          </div>
+          <div class="form-group">
+            <label class="form-label">🥈 2nd Place Bonus (₦)</label>
+            <input class="form-input" id="g-2nd" value="7500" type="number">
+          </div>
+          <div class="form-group">
+            <label class="form-label">🥉 3rd Place Bonus (₦)</label>
+            <input class="form-input" id="g-3rd" value="5000" type="number">
+          </div>
+        </div>
+        <div class="form-row mt-8">
+          <div class="form-group">
+            <label class="form-label">3-Day Streak Bonus (₦)</label>
+            <input class="form-input" id="g-s3" value="500" type="number">
+          </div>
+          <div class="form-group">
+            <label class="form-label">7-Day Streak Bonus (₦)</label>
+            <input class="form-input" id="g-s7" value="1000" type="number">
+          </div>
+          <div class="form-group">
+            <label class="form-label">14-Day Streak Bonus (₦)</label>
+            <input class="form-input" id="g-s14" value="2500" type="number">
+          </div>
+          <div class="form-group">
+            <label class="form-label">30-Day Streak Bonus (₦)</label>
+            <input class="form-input" id="g-s30" value="5000" type="number">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Maintenance Mode -->
+    <div class="card">
+      <div class="card-head"><div class="card-title">🛠️ Maintenance Mode</div></div>
+      <div class="card-body settings-section">
+        <div class="toggle-wrap">
+          <div class="toggle-info">
+            <div class="toggle-label" style="color:var(--red)">Enable Maintenance Mode</div>
+            <div class="toggle-desc">Disables all user-facing app features while active</div>
+          </div>
+          <label class="toggle"><input type="checkbox" id="s-maintenance" onchange="toggleMaintenance(this)"><span class="toggle-slider" style="background:var(--red) !important;opacity:.4;"></span></label>
+        </div>
+        <div class="form-group" id="maintenanceMsgWrap" style="display:none;">
+          <label class="form-label">Maintenance Message</label>
+          <textarea class="form-textarea" id="s-maintMsg" placeholder="We're upgrading Givta for a better experience. Back soon! 🚀"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;justify-content:flex-end;gap:10px;">
+      <button class="btn btn-outline" onclick="loadSettings()">↺ Reset</button>
+      <button class="btn btn-primary" onclick="saveSettings()">💾 Save Settings</button>
+    </div>
+  </div>
+
+  <!-- ═══════════════════ PAGE: LOGS ═══════════════════ -->
+  <div class="page" id="page-logs">
+    <div class="card">
+      <div class="card-head"><div class="card-title">📋 System Logs</div></div>
+      <div class="filter-bar">
+        <div class="search-wrap">
+          <span class="search-icon">🔍</span>
+          <input type="text" placeholder="Search logs…" oninput="filterLogs(this.value)">
+        </div>
+        <select class="form-select" style="width:auto;padding:8px 10px;" onchange="loadLogs(this.value)">
+          <option value="">All Actions</option>
+          <option value="withdrawal_approve">Withdrawal Approved</option>
+          <option value="withdrawal_decline">Withdrawal Declined</option>
+          <option value="user_status_change">User Status Change</option>
+          <option value="kyc_approved">KYC Approved</option>
+          <option value="kyc_rejected">KYC Rejected</option>
+        </select>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Timestamp</th><th>Admin</th><th>Action</th><th>Target</th><th>Details</th></tr></thead>
+          <tbody id="logsTable"><tr><td colspan="5" class="empty-state">Loading…</td></tr></tbody>
+        </table>
+      </div>
+      <div class="pagination"><span class="page-info" id="logPagInfo">—</span></div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════ PAGE: HEALTH ═══════════════════ -->
+  <div class="page" id="page-health">
+    <div class="three-col">
+      <div class="stat-card green" id="healthStatusCard">
+        <div class="stat-icon green">🩺</div>
+        <div class="stat-label">System Status</div>
+        <div class="stat-value" id="healthStatus">—</div>
+      </div>
+      <div class="stat-card purple">
+        <div class="stat-icon purple">⏱</div>
+        <div class="stat-label">Uptime</div>
+        <div class="stat-value" id="healthUptime">—</div>
+      </div>
+      <div class="stat-card blue">
+        <div class="stat-icon blue">🔌</div>
+        <div class="stat-label">DB Response</div>
+        <div class="stat-value" id="healthDB">—</div>
+      </div>
+    </div>
+    <div class="two-col">
+      <div class="card">
+        <div class="card-head"><div class="card-title">🧠 Memory Usage</div></div>
+        <div class="card-body" id="memCard">
+          <div class="empty-state">Loading…</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head"><div class="card-title">🔧 Services Status</div></div>
+        <div class="card-body" id="servicesCard">
+          <div class="empty-state">Loading…</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ MODALS ═══════════ -->
+<!-- User Detail Modal -->
+<div class="modal-overlay" id="userModal">
+  <div class="modal" style="width:620px;">
+    <div class="modal-head">
+      <div class="modal-title" id="userModalTitle">User Details</div>
+      <button class="modal-close" onclick="closeModal('userModal')">✕</button>
+    </div>
+    <div class="modal-body" id="userModalBody">Loading…</div>
+    <div class="modal-footer">
+      <button class="btn btn-danger btn-sm" id="deactivateBtn" onclick="toggleUserFromModal()">Deactivate</button>
+      <button class="btn btn-outline btn-sm" onclick="closeModal('userModal')">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Create User Modal -->
+<div class="modal-overlay" id="createUserModal">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title">👤 Create New User</div>
+      <button class="modal-close" onclick="closeModal('createUserModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Username *</label>
+        <input class="form-input" id="cu-username" placeholder="@username">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email</label>
+        <input class="form-input" id="cu-email" type="email" placeholder="user@email.com">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Phone Number</label>
+        <input class="form-input" id="cu-phone" placeholder="+2348100000000">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password *</label>
+        <input class="form-input" id="cu-password" type="password">
+      </div>
+      <div class="form-group">
+        <label class="form-label">User Type</label>
+        <select class="form-select" id="cu-type">
+          <option value="user">User</option>
+          <option value="moderator">Moderator</option>
+          <option value="admin">Admin</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('createUserModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="createUser()">Create User</button>
+    </div>
+  </div>
+</div>
+
+<!-- Decline Withdrawal Modal -->
+<div class="modal-overlay" id="declineModal">
+  <div class="modal" style="width:420px;">
+    <div class="modal-head">
+      <div class="modal-title">❌ Decline Withdrawal</div>
+      <button class="modal-close" onclick="closeModal('declineModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="alert warning">⚠️ The withdrawal amount will be refunded to the user's wallet.</div>
+      <div class="form-group mt-8">
+        <label class="form-label">Reason for Declining *</label>
+        <textarea class="form-textarea" id="declineReason" placeholder="Explain why this withdrawal is being declined…"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('declineModal')">Cancel</button>
+      <button class="btn btn-danger" onclick="confirmDecline()">Decline & Refund</button>
+    </div>
+  </div>
+</div>
+
+<!-- KYC Review Modal -->
+<div class="modal-overlay" id="kycModal">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title">🆔 KYC Review</div>
+      <button class="modal-close" onclick="closeModal('kycModal')">✕</button>
+    </div>
+    <div class="modal-body" id="kycModalBody">Loading…</div>
+    <div class="modal-footer">
+      <button class="btn btn-danger btn-sm" id="kycRejectBtn" onclick="updateKyc('rejected')">Reject</button>
+      <button class="btn btn-success btn-sm" id="kycApproveBtn" onclick="updateKyc('approved')">Approve</button>
+      <button class="btn btn-outline btn-sm" onclick="closeModal('kycModal')">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     SCRIPT — connects to your backend API
+════════════════════════════════════════════════════════════ -->
+<script>
+// ── CONFIG ──────────────────────────────────────────
+const BASE = (window.GIVTA_API_URL || 'https://givta-backend.onrender.com') + '/api';
+// If you have a token stored, update here. Otherwise prompt login.
+let TOKEN = localStorage.getItem('givta_admin_token') || '';
+
+// DEVELOPMENT: Set demo token if no token exists (remove in production)
+// const DEMO_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImFkbWluIiwiaWF0IjoxNjI5MDAwMDAwfQ.demo';
+// if (!TOKEN) { TOKEN = DEMO_TOKEN; localStorage.setItem('givta_admin_token', DEMO_TOKEN); }
+
+// ── DATA STORES ──────────────────────────────────────
+let allWithdrawals = [], allUsers = [], allKyc = [], allTx = [], allWallets = [], allDeposits = [], allLogs = [];
+let pendingWithdrawalId = null, pendingKycId = null, pendingUserModal = null;
+let announcements = JSON.parse(localStorage.getItem('givta_announcements') || '[]');
+let settingsCache = {};
+
+// ── NAVIGATION ───────────────────────────────────────
+const pageNames = {
+  overview:'Dashboard', analytics:'Analytics', withdrawals:'Withdrawals',
+  deposits:'Deposits', transactions:'Transactions', wallets:'User Wallets',
+  users:'All Users', kyc:'KYC Requests', announcements:'Announcements',
+  tips:'Tips & Links', settings:'Settings', logs:'System Logs', health:'System Health'
+};
+
+function goPage(id, el) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  const page = document.getElementById('page-' + id);
+  if (page) page.classList.add('active');
+  if (el) el.classList.add('active');
+  document.getElementById('pageTitle').textContent = pageNames[id] || id;
+  const subs = {
+    overview:'Welcome back — here\'s what\'s happening',
+    withdrawals:'Approve or decline withdrawal requests',
+    users:'Manage and monitor user accounts',
+    kyc:'Review identity verification documents',
+    settings:'Configure platform behaviour',
+    analytics:'Platform metrics and performance',
+    announcements:'Broadcast messages to users',
+    health:'Monitor system infrastructure'
+  };
+  document.getElementById('pageSubtitle').textContent = subs[id] || '';
+  if (id === 'withdrawals')   loadWithdrawals();
+  if (id === 'deposits')      loadDeposits();
+  if (id === 'transactions')  loadTransactions();
+  if (id === 'wallets')       loadWalletBalances();
+  if (id === 'users')         loadUsers();
+  if (id === 'kyc')           loadKyc();
+  if (id === 'analytics')     loadAnalytics();
+  if (id === 'tips')          loadTips();
+  if (id === 'settings')      loadSettings();
+  if (id === 'logs')          loadLogs();
+  if (id === 'health')        loadHealth();
+  if (id === 'announcements') renderAnnouncements();
+}
+
+// ── HTTP ─────────────────────────────────────────────
+async function api(path, opts = {}) {
+  const headers = { 'Content-Type': 'application/json' };
+  if (TOKEN) headers['Authorization'] = 'Bearer ' + TOKEN;
+  try {
+    const r = await fetch(BASE + path, { ...opts, headers: { ...headers, ...(opts.headers || {}) } });
+    if (r.status === 401) { toast('Session expired — please log in again', 'error'); return null; }
+    const j = await r.json();
+    return j;
+  } catch (e) {
+    console.warn('API error', path, e);
+    return null;
+  }
+}
+
+// ── LOAD DASHBOARD ────────────────────────────────────
+async function loadDashboard() {
+  try {
+    console.log('[Dashboard] Loading dashboard data...');
+    const [stats, wd, analytics] = await Promise.all([
+      api('/admin/stats'),
+      api('/admin/withdrawals?status=pending&limit=5'),
+      api('/admin/analytics/tipping-earnings')
+    ]);
+
+    console.log('[Dashboard] API responses:', { stats, wd, analytics });
+
+    if (stats?.data || stats?.users) {
+      const d = stats.data || stats;
+      console.log('[Dashboard] Populating stats with:', d);
+      setEl('stat-users', fmt(d.users?.total || 0));
+      setEl('stat-users-d', `${fmt(d.users?.active || 0)} active today`);
+      setEl('stat-balance', '₦' + shortNum(d.wallets?.totalBalance || 0));
+      setEl('stat-txtoday', fmt(d.transactions?.today || 0));
+      setEl('stat-tipvol', '₦' + shortNum(analytics?.data?.tippingActivity?.totalTipVolume || d.transactions?.volume || 0));
+      const pendCnt = wd?.data?.total || wd?.total || 0;
+      setEl('stat-pendwd', fmt(pendCnt));
+      setEl('stat-kyc', fmt(d.kyc?.pending || 0));
+      setEl('badge-wd', pendCnt);
+      setEl('badge-kyc', d.kyc?.pending || 0);
+    }
+
+    // Overview withdrawals
+    const wdData = wd?.data?.withdrawals || wd?.withdrawals || [];
+    const wdEl = document.getElementById('overviewWithdrawals');
+    if (!wdData.length) {
+      wdEl.innerHTML = '<div class="empty-state"><div class="empty-icon">✅</div>No pending withdrawals</div>';
+    } else {
+      wdEl.innerHTML = wdData.slice(0,5).map(w => withdrawalRow(w, true)).join('');
+    }
+
+    // Activity feed from transactions
+    const txFeed = await api('/admin/transactions?limit=8');
+    const txList = txFeed?.data?.transactions || txFeed?.transactions || [];
+    const feedEl = document.getElementById('activityFeed');
+  if (!txList.length) {
+    feedEl.innerHTML = '<div class="empty-state"><div class="empty-icon">⚡</div>No recent activity</div>';
+  } else {
+    feedEl.innerHTML = txList.map(t => {
+      const dotColor = t.type === 'deposit' ? 'green' : t.type === 'withdrawal' ? 'red' : t.type === 'tip_sent' ? 'blue' : 'yellow';
+      const icon = t.type === 'deposit' ? '💰' : t.type === 'withdrawal' ? '💸' : t.type === 'tip_sent' ? '🎁' : '🔄';
+      return `<div class="activity-item">
+        <div class="activity-dot ${dotColor}"></div>
+        <div>
+          <div class="activity-text">${icon} ${t.description || capitalize(t.type)} — <strong>₦${fmt(t.amount)}</strong></div>
+          <div class="activity-time">${relTime(t.createdAt)}</div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+}
+
+// ── WITHDRAWALS ───────────────────────────────────────
+async function loadWithdrawals(status = 'pending') {
+  const res = await api(`/admin/withdrawals?status=${status}&limit=50`);
+  allWithdrawals = res?.data?.withdrawals || res?.withdrawals || [];
+  renderWithdrawals(allWithdrawals);
+  setEl('wdPagInfo', `${allWithdrawals.length} results`);
+}
+
+function withdrawalRow(w, compact = false) {
+  const initials = (w.userName || w.userDisplayName || '?').charAt(0).toUpperCase();
+  const bank = w.metadata?.bankDetails;
+  const bankStr = bank ? `${bank.bankName || bank.bankCode} · ${bank.accountNumber}` : 'No bank details';
+  return `<div class="withdraw-item" data-id="${w.id}">
+    <div class="withdraw-avatar">${initials}</div>
+    <div class="withdraw-info">
+      <div class="withdraw-name">${w.userName || w.userDisplayName || 'Unknown User'}</div>
+      <div class="withdraw-meta">${bankStr} · ${relTime(w.createdAt)}</div>
+    </div>
+    <div class="withdraw-amount">₦${fmt(Math.abs(w.amount))}</div>
+    <div class="withdraw-actions">
+      ${w.status === 'pending' ? `
+        <button class="btn btn-success btn-xs" onclick="approveWithdrawal('${w.id}')">✓ Approve</button>
+        <button class="btn btn-danger btn-xs" onclick="promptDecline('${w.id}')">✕ Decline</button>
+      ` : `<span class="badge ${w.status === 'completed' ? 'green' : w.status === 'failed' ? 'red' : 'yellow'}">${w.status}</span>`}
+    </div>
+  </div>`;
+}
+
+function renderWithdrawals(list) {
+  const el = document.getElementById('withdrawalsList');
+  if (!list.length) { el.innerHTML = '<div class="empty-state"><div class="empty-icon">💸</div>No withdrawals found</div>'; return; }
+  el.innerHTML = list.map(w => withdrawalRow(w)).join('');
+}
+
+function filterWithdrawals(q) {
+  const f = allWithdrawals.filter(w =>
+    (w.userName||'').toLowerCase().includes(q.toLowerCase()) ||
+    String(w.amount).includes(q)
+  );
+  renderWithdrawals(f);
+}
+
+async function approveWithdrawal(id) {
+  const res = await api(`/admin/withdrawals/${id}/approve`, { method: 'PUT' });
+  if (res?.success || res?.message) {
+    toast('Withdrawal approved ✅', 'success');
+    loadWithdrawals(document.getElementById('wdStatusFilter').value);
+    loadDashboard();
+  } else {
+    toast(res?.error || 'Approval failed', 'error');
+  }
+}
+
+function promptDecline(id) {
+  pendingWithdrawalId = id;
+  document.getElementById('declineReason').value = '';
+  openModal('declineModal');
+}
+
+async function confirmDecline() {
+  const reason = document.getElementById('declineReason').value;
+  if (!reason.trim()) { toast('Please enter a reason', 'warning'); return; }
+  const res = await api(`/admin/withdrawals/${pendingWithdrawalId}/decline`, {
+    method: 'PUT',
+    body: JSON.stringify({ reason, refund: true })
+  });
+  if (res?.success || res?.message) {
+    toast('Withdrawal declined & refunded ✅', 'success');
+    closeModal('declineModal');
+    loadWithdrawals();
+    loadDashboard();
+  } else {
+    toast(res?.error || 'Failed', 'error');
+  }
+}
+
+// ── DEPOSITS ───────────────────────────────────────
+async function loadDeposits() {
+  const res = await api('/admin/deposits?limit=50');
+  allDeposits = res?.data?.deposits || res?.deposits || [];
+  renderDeposits(allDeposits);
+  setEl('depPagInfo', `${allDeposits.length} deposits`);
+}
+
+function renderDeposits(list) { 
+  const el = document.getElementById('depositsTable');
+  if (!list.length) { el.innerHTML = '<tr><td colspan="6" class="empty-state">No deposits found</td></tr>'; return; }
+  el.innerHTML = list.map(d => `<tr>
+    <td><span class="tag mono">${d.reference || d.id?.slice(0,8)}</span></td>
+    <td>${d.userName || d.userEmail || 'Unknown'}</td>
+    <td>₦${fmt(d.amount)}</td>
+    <td>${d.method || d.paymentMethod || 'Online'}</td>
+    <td><span class="badge ${d.status === 'completed' ? 'green' : d.status === 'pending' ? 'yellow' : 'red'}">${d.status}</span></td>
+    <td>${new Date(d.createdAt).toLocaleDateString()}</td>
+  </tr>`).join('');
+}
+
+function filterDeposits(q) {
+  const f = allDeposits.filter(d =>
+    (d.reference||'').toLowerCase().includes(q.toLowerCase()) ||
+    (d.userName||'').toLowerCase().includes(q.toLowerCase())
+  );
+  renderDeposits(f);
+}
+
+// ── TRANSACTIONS ───────────────────────────────────
+async function loadTransactions(type = '') {
+  const res = await api(`/admin/transactions?${type ? 'type=' + type : ''}&limit=100`);
+  allTx = res?.data?.transactions || res?.transactions || [];
+  renderTransactions(allTx);
+  setEl('txPagInfo', `${allTx.length} transactions`);
+}
+
+function renderTransactions(list) {
+  const el = document.getElementById('txTable');
+  if (!list.length) { el.innerHTML = '<tr><td colspan="7" class="empty-state">No transactions found</td></tr>'; return; }
+  el.innerHTML = list.map(t => `<tr>
+    <td><span class="tag mono">${t.id?.slice(0,8)}</span></td>
+    <td>${t.userName || t.userEmail || 'User'}</td>
+    <td>${capitalize(t.type?.replace(/_/g,' '))}</td>
+    <td>₦${fmt(t.amount)}</td>
+    <td><span class="badge ${t.status === 'completed' ? 'green' : t.status === 'pending' ? 'yellow' : 'red'}">${t.status}</span></td>
+    <td>${new Date(t.createdAt).toLocaleDateString()}</td>
+    <td><button class="btn btn-outline btn-xs" onclick="alert('Details: ' + JSON.stringify(t, null, 2))">View</button></td>
+  </tr>`).join('');
+}
+
+function filterTransactions(q) {
+  const f = allTx.filter(t =>
+    (t.id||'').includes(q) ||
+    (t.userName||'').toLowerCase().includes(q.toLowerCase())
+  );
+  renderTransactions(f);
+}
+
+// ── WALLETS ───────────────────────────────────────
+async function loadWalletBalances() {
+  const res = await api('/admin/wallets?limit=100');
+  allWallets = res?.data?.wallets || res?.wallets || [];
+  renderWallets(allWallets);
+  setEl('walPagInfo', `${allWallets.length} wallets`);
+}
+
+function renderWallets(list) {
+  const el = document.getElementById('walletsTable');
+  if (!list.length) { el.innerHTML = '<tr><td colspan="7" class="empty-state">No wallets found</td></tr>'; return; }
+  el.innerHTML = list.map(w => `<tr>
+    <td>${w.userName || w.userEmail || 'User'}</td>
+    <td class="mono fw7">₦${fmt(w.balance || 0)}</td>
+    <td>₦${fmt(w.totalDeposits || 0)}</td>
+    <td>₦${fmt(w.totalWithdrawals || 0)}</td>
+    <td>₦${fmt(w.tipsReceived || 0)}</td>
+    <td>₦${fmt(w.referralEarnings || 0)}</td>
+    <td><span class="badge ${w.status === 'active' ? 'green' : 'red'}">${w.status}</span></td>
+  </tr>`).join('');
+}
+
+function filterWallets(q) {
+  const f = allWallets.filter(w =>
+    (w.userName||'').toLowerCase().includes(q.toLowerCase()) ||
+    (w.userEmail||'').toLowerCase().includes(q.toLowerCase())
+  );
+  renderWallets(f);
+}
+
+// ── USERS ────────────────────────────────────────────
+async function loadUsers(active = '', kyc = '') {
+  let path = '/admin/users?limit=100';
+  if (active !== '') path += '&active=' + active;
+  if (kyc !== '') path += '&kyc=' + kyc;
+  const res = await api(path);
+  allUsers = res?.data?.users || res?.users || [];
+  renderUsers(allUsers);
+  setEl('uPagInfo', `${allUsers.length} users`);
+}
+
+function renderUsers(list) {
+  const el = document.getElementById('usersTable');
+  if (!list.length) { el.innerHTML = '<tr><td colspan="7" class="empty-state">No users found</td></tr>'; return; }
+  el.innerHTML = list.map(u => `<tr>
+    <td onclick="showUserModal('${u.id}')" style="cursor:pointer;color:var(--purple);text-decoration:underline;">
+      ${u.displayName || u.username || 'Unknown'}
+    </td>
+    <td>${u.email || u.phone || '—'}</td>
+    <td><span class="badge ${u.kycStatus === 'verified' ? 'green' : u.kycStatus === 'pending' ? 'yellow' : u.kycStatus === 'rejected' ? 'red' : 'gray'}">${u.kycStatus || 'none'}</span></td>
+    <td><span class="badge ${u.active ? 'green' : 'red'}">${u.active ? 'Active' : 'Inactive'}</span></td>
+    <td>${u.referralCount || 0}</td>
+    <td>${new Date(u.createdAt).toLocaleDateString()}</td>
+    <td><button class="btn btn-outline btn-xs" onclick="showUserModal('${u.id}')">Manage</button></td>
+  </tr>`).join('');
+}
+
+function filterUsers(q) {
+  const f = allUsers.filter(u =>
+    (u.username||'').toLowerCase().includes(q.toLowerCase()) ||
+    (u.email||'').toLowerCase().includes(q.toLowerCase()) ||
+    (u.phone||'').includes(q)
+  );
+  renderUsers(f);
+}
+
+async function showUserModal(userId) {
+  pendingUserModal = userId;
+  const user = allUsers.find(u => u.id === userId);
+  if (!user) return;
+  const btn = document.getElementById('deactivateBtn');
+  btn.textContent = user.active ? '🔒 Deactivate' : '✓ Activate';
+  btn.className = user.active ? 'btn btn-danger btn-sm' : 'btn btn-success btn-sm';
+  document.getElementById('userModalTitle').textContent = user.displayName || user.username || 'User Details';
+  document.getElementById('userModalBody').innerHTML = `
+    <div class="user-detail-card">
+      <div class="user-big-avatar">${(user.displayName || user.username || '?').charAt(0).toUpperCase()}</div>
+      <div class="user-detail-info" style="flex:1;">
+        <div class="user-detail-name">${user.displayName || user.username}</div>
+        <div class="user-detail-meta">@${user.username}</div>
+        <div class="user-stats-row">
+          <div class="user-stat-item">
+            <div class="label">Email</div>
+            <div class="value" style="font-size:12px;font-weight:500;font-family:inherit;">${user.email || '—'}</div>
+          </div>
+          <div class="user-stat-item">
+            <div class="label">Phone</div>
+            <div class="value" style="font-size:12px;font-weight:500;font-family:inherit;">${user.phone || '—'}</div>
+          </div>
+          <div class="user-stat-item">
+            <div class="label">Wallet Balance</div>
+            <div class="value">₦${fmt(user.walletBalance || 0)}</div>
+          </div>
+          <div class="user-stat-item">
+            <div class="label">Referrals</div>
+            <div class="value">${user.referralCount || 0}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style="margin-top:16px;padding:12px 16px;background:var(--bg);border-radius:8px;display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+      <div>
+        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;font-weight:700;">KYC Status</div>
+        <div style="margin-top:4px;font-size:13px;font-weight:600;">${user.kycStatus || 'Not Submitted'}</div>
+      </div>
+      <div>
+        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;font-weight:700;">Account Status</div>
+        <div style="margin-top:4px;font-size:13px;font-weight:600;">${user.active ? '✓ Active' : '⊘ Inactive'}</div>
+      </div>
+      <div>
+        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;font-weight:700;">Member Since</div>
+        <div style="margin-top:4px;font-size:13px;font-weight:600;">${new Date(user.createdAt).toLocaleDateString()}</div>
+      </div>
+      <div>
+        <div style="font-size:11px;color:var(--muted);text-transform:uppercase;font-weight:700;">Last Active</div>
+        <div style="margin-top:4px;font-size:13px;font-weight:600;">${relTime(user.lastActive)}</div>
+      </div>
+    </div>
+  `;
+  openModal('userModal');
+}
+
+async function toggleUserFromModal() {
+  const user = allUsers.find(u => u.id === pendingUserModal);
+  if (!user) return;
+  const action = user.active ? 'deactivate' : 'activate';
+  const res = await api(`/admin/users/${pendingUserModal}/${action}`, { method: 'PUT' });
+  if (res?.success || res?.message) {
+    toast(`User ${action}d ✅`, 'success');
+    closeModal('userModal');
+    loadUsers();
+  } else {
+    toast(res?.error || 'Failed', 'error');
+  }
+}
+
+async function createUser() {
+  const username = document.getElementById('cu-username').value;
+  const email = document.getElementById('cu-email').value;
+  const phone = document.getElementById('cu-phone').value;
+  const password = document.getElementById('cu-password').value;
+  const type = document.getElementById('cu-type').value;
+  if (!username || !password) { toast('Username and password required', 'warning'); return; }
+  const res = await api('/admin/users', {
+    method: 'POST',
+    body: JSON.stringify({ username, email, phone, password, type })
+  });
+  if (res?.success || res?.id) {
+    toast('User created ✅', 'success');
+    closeModal('createUserModal');
+    loadUsers();
+  } else {
+    toast(res?.error || 'Failed to create user', 'error');
+  }
+}
+
+// ── KYC ────────────────────────────────────────────
+async function loadKyc(status = 'pending') {
+  const res = await api(`/admin/kyc?status=${status}&limit=50`);
+  allKyc = res?.data?.kyc || res?.kyc || [];
+  renderKyc(allKyc);
+  setEl('kycPagInfo', `${allKyc.length} requests`);
+}
+
+function renderKyc(list) {
+  const el = document.getElementById('kycTable');
+  if (!list.length) { el.innerHTML = '<tr><td colspan="5" class="empty-state">No KYC requests</td></tr>'; return; }
+  el.innerHTML = list.map(k => `<tr>
+    <td>${k.userName || k.userEmail || 'User'}</td>
+    <td>${k.documentType || 'National ID'}</td>
+    <td>${new Date(k.submittedAt).toLocaleDateString()}</td>
+    <td><span class="badge ${k.status === 'approved' ? 'green' : k.status === 'rejected' ? 'red' : 'yellow'}">${k.status}</span></td>
+    <td><button class="btn btn-outline btn-xs" onclick="showKycModal('${k.id}')">Review</button></td>
+  </tr>`).join('');
+}
+
+function filterKyc(q) {
+  const f = allKyc.filter(k =>
+    (k.userName||'').toLowerCase().includes(q.toLowerCase()) ||
+    (k.documentType||'').includes(q)
+  );
+  renderKyc(f);
+}
+
+async function showKycModal(id) {
+  pendingKycId = id;
+  const kyc = allKyc.find(k => k.id === id);
+  if (!kyc) return;
+  document.getElementById('kycModalBody').innerHTML = `
+    <div class="form-group">
+      <label class="form-label">User</label>
+      <div style="padding:9px 12px;border:1px solid var(--border);border-radius:7px;background:var(--bg);">${kyc.userName}</div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Document Type</label>
+      <div style="padding:9px 12px;border:1px solid var(--border);border-radius:7px;background:var(--bg);">${kyc.documentType}</div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Document Image</label>
+      <div class="kyc-doc-preview">
+        <img src="${kyc.documentUrl}" style="max-width:100%;max-height:300px;border-radius:8px;" onerror="this.textContent='Unable to load image'">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Submitted</label>
+      <div style="padding:9px 12px;border:1px solid var(--border);border-radius:7px;background:var(--bg);">${new Date(kyc.submittedAt).toLocaleString()}</div>
+    </div>
+    ${kyc.status !== 'pending' ? `
+      <div class="form-group">
+        <label class="form-label">Status</label>
+        <div style="padding:9px 12px;border:1px solid var(--border);border-radius:7px;background:var(--bg);color:${kyc.status === 'approved' ? 'green' : 'red'};">
+          ${capitalize(kyc.status)}
+        </div>
+      </div>
+    ` : ''}
+  `;
+  openModal('kycModal');
+}
+
+async function updateKyc(status) {
+  const res = await api(`/admin/kyc/${pendingKycId}/${status}`, { method: 'PUT' });
+  if (res?.success || res?.message) {
+    toast(`KYC ${status} ✅`, 'success');
+    closeModal('kycModal');
+    loadKyc(document.getElementById('kycStatusFilter').value);
+    loadDashboard();
+  } else {
+    toast(res?.error || 'Failed', 'error');
+  }
+}
+
+// ── ANNOUNCEMENTS ────────────────────────────────────
+async function sendAnnouncement() {
+  const title = document.getElementById('annTitle').value;
+  const body = document.getElementById('annBody').value;
+  const type = document.getElementById('annType').value;
+  const link = document.getElementById('annLink').value;
+  const audience = document.getElementById('annAudience').value;
+  if (!title || !body) { toast('Title and message required', 'warning'); return; }
+  const res = await api('/admin/announcements', {
+    method: 'POST',
+    body: JSON.stringify({ title, body, type, link, audience })
+  });
+  if (res?.success || res?.id) {
+    const ann = { id: res.id || Date.now(), title, body, type, audience, createdAt: new Date() };
+    announcements.unshift(ann);
+    localStorage.setItem('givta_announcements', JSON.stringify(announcements));
+    toast('Announcement broadcast ✅', 'success');
+    clearAnnouncement();
+    renderAnnouncements();
+  } else {
+    toast(res?.error || 'Failed', 'error');
+  }
+}
+
+function clearAnnouncement() {
+  document.getElementById('annTitle').value = '';
+  document.getElementById('annBody').value = '';
+  document.getElementById('annLink').value = '';
+  document.getElementById('annType').value = 'info';
+  document.getElementById('annAudience').value = 'all';
+}
+
+function renderAnnouncements() {
+  const el = document.getElementById('annList');
+  if (!announcements.length) {
+    el.innerHTML = '<div class="empty-state"><div class="empty-icon">📣</div>No announcements yet. Broadcast one above.</div>';
+    return;
+  }
+  el.innerHTML = announcements.map(a => `<div class="announcement-item">
+    <div class="ann-icon ${a.type}">
+      ${a.type === 'info' ? 'ℹ️' : a.type === 'success' ? '✅' : a.type === 'warning' ? '⚠️' : '🚨'}
+    </div>
+    <div class="ann-content">
+      <div class="ann-title">${a.title}</div>
+      <div class="ann-body">${a.body}</div>
+      ${a.link ? `<div class="ann-link">🔗 ${a.link}</div>` : ''}
+      <div class="ann-meta">
+        ${new Date(a.createdAt).toLocaleString()} · Audience: ${a.audience}
+      </div>
+    </div>
+  </div>`).join('');
+}
+
+// ── TIPS ────────────────────────────────────────────
+async function loadTips() {
+  const res = await api('/admin/tips?limit=100');
+  const tips = res?.data?.tips || res?.tips || [];
+  renderTips(tips);
+}
+
+function renderTips(list) {
+  const el = document.getElementById('tipsTable');
+  if (!list.length) { el.innerHTML = '<tr><td colspan="5" class="empty-state">No tips found</td></tr>'; return; }
+  el.innerHTML = list.map(t => `<tr>
+    <td>${t.senderName || 'Anonymous'}</td>
+    <td>${t.recipientName || 'User'}</td>
+    <td class="mono fw7">₦${fmt(t.amount)}</td>
+    <td>${t.message ? t.message.slice(0,30) + '...' : '—'}</td>
+    <td>${new Date(t.createdAt).toLocaleDateString()}</td>
+  </tr>`).join('');
+}
+
+function filterTips(q) {
+  const tbody = document.getElementById('tipsTable');
+  const rows = tbody.querySelectorAll('tr');
+  rows.forEach(r => {
+    r.style.display = r.textContent.toLowerCase().includes(q.toLowerCase()) ? '' : 'none';
+  });
+}
+
+// ── ANALYTICS ───────────────────────────────────────
+async function loadAnalytics() {
+  const [overview, leaderboard] = await Promise.all([
+    api('/admin/analytics/overview'),
+    api('/admin/analytics/leaderboard')
+  ]);
+  const o = overview?.data || overview || {};
+  setEl('an-tx24', fmt(o.transactions24h || 0));
+  setEl('an-vol24', '₦' + shortNum(o.volume24h || 0));
+  setEl('an-u24', fmt(o.activeUsers24h || 0));
+  
+  const leaderList = leaderboard?.data?.leaderboard || leaderboard?.leaderboard || [];
+  const leaderEl = document.getElementById('referralTable');
+  if (!leaderList.length) {
+    leaderEl.innerHTML = '<tr><td colspan="4" class="empty-state">No data</td></tr>';
+  } else {
+    leaderEl.innerHTML = leaderList.map((u, i) => `<tr>
+      <td>${i+1}</td>
+      <td>${u.username}</td>
+      <td>${u.referralCount}</td>
+      <td>₦${fmt(u.bonusEarned)}</td>
+    </tr>`).join('');
+  }
+}
+
+// ── LOGS ────────────────────────────────────────────
+async function loadLogs(action = '') {
+  let path = '/admin/audit?limit=100';
+  if (action) path += '&action=' + action;
+  const res = await api(path);
+  allLogs = res?.data?.logs || res?.logs || [];
+  renderLogs(allLogs);
+  setEl('logPagInfo', `${allLogs.length} logs`);
+}
+
+function renderLogs(list) {
+  const el = document.getElementById('logsTable');
+  if (!list.length) { el.innerHTML = '<tr><td colspan="5" class="empty-state">No logs</td></tr>'; return; }
+  el.innerHTML = list.map(l => `<tr>
+    <td>${new Date(l.timestamp).toLocaleString()}</td>
+    <td>${l.adminName || 'Admin'}</td>
+    <td><span class="tag">${l.action}</span></td>
+    <td>${l.target || '—'}</td>
+    <td>${l.details || '—'}</td>
+  </tr>`).join('');
+}
+
+function filterLogs(q) {
+  const tbody = document.getElementById('logsTable');
+  const rows = tbody.querySelectorAll('tr');
+  rows.forEach(r => {
+    r.style.display = r.textContent.toLowerCase().includes(q.toLowerCase()) ? '' : 'none';
+  });
+}
+
+// ── HEALTH ───────────────────────────────────────────
+async function loadHealth() {
+  const res = await api('/admin/health');
+  const h = res?.data || res || {};
+  const status = h.status || 'unknown';
+  setEl('healthStatus', status === 'healthy' ? '✓ Healthy' : status === 'degraded' ? '⚠ Degraded' : '✕ Down');
+  const statusCard = document.getElementById('healthStatusCard');
+  statusCard.className = status === 'healthy' ? 'stat-card green' : status === 'degraded' ? 'stat-card yellow' : 'stat-card red';
+  setEl('healthUptime', h.uptime ? ((h.uptime / 3600).toFixed(2) + ' hrs') : '—');
+  setEl('healthDB', h.dbResponse ? (h.dbResponse + 'ms') : '—');
+  
+  const memCard = document.getElementById('memCard');
+  memCard.innerHTML = h.memory ? `
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <div>
+        <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:12px;font-weight:600;">
+          <span>Used</span><span>${((h.memory.used / h.memory.total) * 100).toFixed(1)}%</span>
+        </div>
+        <div style="width:100%;height:8px;background:var(--border);border-radius:4px;overflow:hidden;">
+          <div style="width:${((h.memory.used / h.memory.total) * 100)}%;height:100%;background:var(--purple);"></div>
+        </div>
+      </div>
+      <div style="font-size:11px;color:var(--muted);">${fmt(h.memory.used)} / ${fmt(h.memory.total)} MB</div>
+    </div>
+  ` : '<div class="empty-state">Loading…</div>';
+  
+  const servCard = document.getElementById('servicesCard');
+  const services = h.services || {};
+  servCard.innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      ${Object.keys(services).map(s => `<div style="display:flex;align-items:center;justify-content:space-between;">
+        <span style="font-size:12px;font-weight:600;">${capitalize(s)}</span>
+        <span class="badge ${services[s] === 'ok' ? 'green' : 'red'}">${services[s] === 'ok' ? '✓' : '✕'}</span>
+      </div>`).join('')}
+    </div>
+  `;
+}
+
+// ── SETTINGS ────────────────────────────────────────
+async function loadSettings() {
+  const res = await api('/admin/settings');
+  settingsCache = res?.data || res || {};
+  // Populate form fields from settings
+  Object.keys(settingsCache).forEach(k => {
+    const el = document.getElementById('s-' + k) || document.getElementById('n-' + k) || document.getElementById('f-' + k) || document.getElementById('g-' + k);
+    if (el) {
+      if (el.type === 'checkbox') el.checked = !!settingsCache[k];
+      else el.value = settingsCache[k];
+    }
+  });
+}
+
+async function saveSettings() {
+  const settings = {};
+  document.querySelectorAll('[id^="s-"],[id^="n-"],[id^="f-"],[id^="g-"]').forEach(el => {
+    const key = el.id.replace(/^[snfg]-/, '');
+    settings[key] = el.type === 'checkbox' ? el.checked : el.value;
+  });
+  const res = await api('/admin/settings', {
+    method: 'PUT',
+    body: JSON.stringify(settings)
+  });
+  if (res?.success || res?.message) {
+    toast('Settings saved ✅', 'success');
+  } else {
+    toast(res?.error || 'Failed', 'error');
+  }
+}
+
+function toggleMaintenance(el) {
+  const msgWrap = document.getElementById('maintenanceMsgWrap');
+  msgWrap.style.display = el.checked ? 'flex' : 'none';
+}
+
+// ── CREDIT WALLET ────────────────────────────────────
+async function creditWallet() {
+  const userId = document.getElementById('creditUserId').value;
+  const amount = document.getElementById('creditAmount').value;
+  const desc = document.getElementById('creditDesc').value;
+  if (!userId || !amount) { toast('User ID and amount required', 'warning'); return; }
+  const res = await api('/admin/wallet/credit', {
+    method: 'POST',
+    body: JSON.stringify({ userId, amount: parseFloat(amount), reason: desc })
+  });
+  if (res?.success || res?.message) {
+    toast('Wallet credited ✅', 'success');
+    clearCredit();
+    loadDashboard();
+  } else {
+    toast(res?.error || 'Failed', 'error');
+  }
+}
+
+function clearCredit() {
+  document.getElementById('creditUserId').value = '';
+  document.getElementById('creditAmount').value = '';
+  document.getElementById('creditDesc').value = '';
+}
+
+function toggleAutoWithdraw(el) {
+  toast(el.checked ? 'Auto withdrawal enabled' : 'Auto withdrawal disabled', 'success');
+}
+
+function refreshData() {
+  const activeNav = document.querySelector('.nav-item.active');
+  if (activeNav) activeNav.click();
+}
+
+// ── MODAL ────────────────────────────────────────────
+function openModal(id) {
+  document.getElementById(id).classList.add('open');
+}
+
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+}
+
+// ── UTILITY ──────────────────────────────────────────
+function setEl(id, val) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = val;
+}
+
+function fmt(n) { return new Intl.NumberFormat('en-NG').format(Math.round(n || 0)); }
+function shortNum(n) { return n >= 1000000 ? (n/1000000).toFixed(2)+'M' : n >= 1000 ? (n/1000).toFixed(2)+'K' : fmt(n); }
+function capitalize(s) { return s?.charAt(0).toUpperCase() + s?.slice(1); }
+function relTime(d) {
+  const now = new Date(), then = new Date(d), diff = (now - then) / 1000;
+  if (diff < 60) return 'just now';
+  if (diff < 3600) return Math.round(diff/60) + 'm ago';
+  if (diff < 86400) return Math.round(diff/3600) + 'h ago';
+  return Math.round(diff/86400) + 'd ago';
+}
+
+function toast(msg, type = 'success') {
+  const container = document.getElementById('toastContainer');
+  const t = document.createElement('div');
+  t.className = 'toast ' + type;
+  t.innerHTML = `<span>${msg}</span>`;
+  container.appendChild(t);
+  setTimeout(() => t.remove(), 3000);
+}
+
+// ── LOAD ON INIT ────────────────────────────────────
+// Initialize on page load or immediately if already loaded
+function initApp() {
+  console.log('[Init] Starting app initialization. TOKEN:', TOKEN ? 'present' : 'missing');
+  if (!TOKEN) {
+    console.log('[Init] No token, showing login screen');
+    showLoginScreen();
+  } else {
+    console.log('[Init] Token found, loading dashboard');
+    loadDashboard().catch(e => console.error('[Dashboard] Error loading dashboard:', e));
+  }
+}
+
+if (document.readyState === 'loading') {
+  console.log('[Init] DOM loading, waiting for DOMContentLoaded event');
+  document.addEventListener('DOMContentLoaded', initApp);
+} else {
+  // DOM is already loaded, run immediately
+  console.log('[Init] DOM already loaded, running initApp immediately');
+  initApp();
+}
+
+function showLoginScreen() {
+  const modal = document.createElement('div');
+  modal.id = 'loginModal';
+  modal.className = 'modal-overlay open';
+  modal.innerHTML = `<div class="modal" style="width:400px;margin-top:0;">
+    <div class="modal-head" style="justify-content:center;">
+      <div style="text-align:center;">
+        <div style="font-size:32px;margin-bottom:10px;">🔐</div>
+        <div style="font-size:20px;font-weight:700;">Givta Admin Portal</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:4px;">Enter your credentials to continue</div>
+      </div>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Email</label>
+        <input class="form-input" id="loginEmail" type="email" placeholder="admin@givta.app">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input class="form-input" id="loginPassword" type="password" placeholder="••••••••">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Backend API URL (optional)</label>
+        <input class="form-input" id="loginAPI" placeholder="https://givta-backend.onrender.com" value="${window.GIVTA_API_URL || ''}">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-primary" style="flex:1;" onclick="attemptLogin()">Sign In</button>
+    </div>
+  </div>`;
+  document.body.appendChild(modal);
+}
+
+async function attemptLogin() {
+  const email = document.getElementById('loginEmail').value;
+  const password = document.getElementById('loginPassword').value;
+  const apiUrl = document.getElementById('loginAPI').value || BASE;
+  if (!email || !password) { toast('Email and password required', 'warning'); return; }
+  
+  try {
+    const res = await fetch(`${apiUrl}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+    const data = await res.json();
+    
+    // Check if login was successful and user is admin
+    const token = data?.data?.tokens?.accessToken || data?.token || data?.data?.token;
+    const user = data?.data?.user;
+    const isAdmin = user?.isAdmin || user?.role === 'admin' || user?.userType === 'admin';
+    
+    if (!token) {
+      toast(data?.message || data?.error || 'Login failed', 'error');
+      return;
+    }
+    
+    if (!isAdmin) {
+      toast('Admin access required', 'error');
+      return;
+    }
+    
+    TOKEN = token;
+    localStorage.setItem('givta_admin_token', TOKEN);
+    localStorage.setItem('givta_admin_user', JSON.stringify(user));
+    if (apiUrl !== BASE) window.GIVTA_API_URL = apiUrl;
+    toast('Welcome! 👋', 'success');
+    document.getElementById('loginModal').remove();
+    loadDashboard();
+  } catch (e) {
+    toast('Connection error: ' + e.message, 'error');
+  }
+}
+
+// Logout function
+function logout() {
+  TOKEN = '';
+  localStorage.removeItem('givta_admin_token');
+  window.location.reload();
+}
+}
+
+async function confirmDecline() {
+  const reason = document.getElementById('declineReason').value.trim();
+  if (!reason) { toast('Please provide a reason', 'warning'); return; }
+  const res = await api(`/admin/withdrawals/${pendingWithdrawalId}/decline`, {
+    method: 'PUT',
+    body: JSON.stringify({ reason })
+  });
+  if (res?.success || res?.message) {
+    toast('Withdrawal declined & refunded', 'success');
+    closeModal('declineModal');
+    loadWithdrawals(document.getElementById('wdStatusFilter').value);
+    loadDashboard();
+  } else {
+    toast(res?.error || 'Failed to decline', 'error');
+  }
+}
+
+function toggleAutoWithdraw(el) {
+  toast(el.checked ? '⚡ Auto-withdrawal enabled' : '🔒 Manual withdrawal mode active', el.checked ? 'success' : 'warning');
+  // Save setting
+  document.getElementById('s-autoWd').checked = el.checked;
+}
+
+// ── DEPOSITS ──────────────────────────────────────────
+async function loadDeposits() {
+  const res = await api('/admin/transactions?type=deposit&limit=100');
+  allDeposits = (res?.data?.transactions || res?.transactions || []).filter(t => t.type === 'deposit');
+  renderDeposits(allDeposits);
+  setEl('depPagInfo', `${allDeposits.length} deposits`);
+}
+
+function renderDeposits(list) {
+  const tb = document.getElementById('depositsTable');
+  if (!list.length) { tb.innerHTML = '<tr><td colspan="6" class="empty-state">No deposits found</td></tr>'; return; }
+  tb.innerHTML = list.map(d => `<tr>
+    <td class="mono" style="font-size:11px;">${(d.reference||d.id||'').slice(0,14)}…</td>
+    <td>${d.userId?.slice(0,10)||'—'}</td>
+    <td class="fw7">₦${fmt(d.amount)}</td>
+    <td>${d.paymentMethod||'paystack'}</td>
+    <td><span class="badge ${d.status==='completed'?'green':d.status==='pending'?'yellow':'red'}">${d.status}</span></td>
+    <td>${fmtDate(d.createdAt)}</td>
+  </tr>`).join('');
+}
+
+function filterDeposits(q) {
+  renderDeposits(allDeposits.filter(d => JSON.stringify(d).toLowerCase().includes(q.toLowerCase())));
+}
+
+// ── TRANSACTIONS ──────────────────────────────────────
+async function loadTransactions(type = '') {
+  const q = type ? `?type=${type}&limit=100` : '?limit=100';
+  const res = await api('/admin/transactions' + q);
+  allTx = res?.data?.transactions || res?.transactions || [];
+  renderTransactions(allTx);
+  setEl('txPagInfo', `${allTx.length} transactions`);
+}
+
+function renderTransactions(list) {
+  const tb = document.getElementById('txTable');
+  if (!list.length) { tb.innerHTML = '<tr><td colspan="7" class="empty-state">No transactions found</td></tr>'; return; }
+  tb.innerHTML = list.map(t => `<tr>
+    <td class="mono" style="font-size:11px;">${(t.id||'').slice(0,12)}…</td>
+    <td>${t.userId?.slice(0,10)||'—'}</td>
+    <td><span class="badge ${txColor(t.type)}">${t.type?.replace('_',' ')}</span></td>
+    <td class="fw7 ${t.amount<0?'':''}">₦${fmt(Math.abs(t.amount))}</td>
+    <td><span class="badge ${t.status==='completed'?'green':t.status==='pending'?'yellow':t.status==='failed'?'red':'gray'}">${t.status}</span></td>
+    <td>${fmtDate(t.createdAt)}</td>
+    <td><button class="btn btn-outline btn-xs" onclick="viewTxDetail('${t.id}')">View</button></td>
+  </tr>`).join('');
+}
+
+function filterTransactions(q) {
+  renderTransactions(allTx.filter(t => JSON.stringify(t).toLowerCase().includes(q.toLowerCase())));
+}
+
+function txColor(type) {
+  return {deposit:'green',withdrawal:'red',tip_sent:'blue',tip_received:'purple',referral_bonus:'yellow',fee:'gray'}[type] || 'gray';
+}
+
+function viewTxDetail(id) { toast(`Transaction ${id.slice(0,12)}… — details coming soon`); }
+
+// ── WALLETS ───────────────────────────────────────────
+async function loadWalletBalances() {
+  const res = await api('/admin/wallet-balances');
+  allWallets = res?.data?.wallets || res?.wallets || [];
+  renderWallets(allWallets);
+  setEl('walPagInfo', `${allWallets.length} wallets`);
+}
+
+function renderWallets(list) {
+  const tb = document.getElementById('walletsTable');
+  if (!list.length) { tb.innerHTML = '<tr><td colspan="7" class="empty-state">No wallets found</td></tr>'; return; }
+  tb.innerHTML = list.map(w => `<tr>
+    <td class="fw6">${w.userId?.slice(0,14)||'—'}</td>
+    <td class="fw7 mono">₦${fmt(w.balance)}</td>
+    <td class="mono">₦${fmt(w.totalDeposits)}</td>
+    <td class="mono">₦${fmt(w.totalWithdrawals)}</td>
+    <td class="mono">₦${fmt(w.totalTipsReceived)}</td>
+    <td class="mono">₦${fmt(w.totalReferralEarnings)}</td>
+    <td><span class="badge ${w.isActive?'green':'red'}">${w.isActive?'Active':'Inactive'}</span></td>
+  </tr>`).join('');
+}
+
+function filterWallets(q) {
+  renderWallets(allWallets.filter(w => JSON.stringify(w).toLowerCase().includes(q.toLowerCase())));
+}
+
+// ── USERS ─────────────────────────────────────────────
+async function loadUsers(activeFilter, kycFilter) {
+  let q = '?limit=100';
+  if (activeFilter) q += `&isActive=${activeFilter}`;
+  if (kycFilter) q += `&kycStatus=${kycFilter}`;
+  const res = await api('/admin/users' + q);
+  allUsers = res?.data?.users || res?.users || [];
+  renderUsers(allUsers);
+  setEl('uPagInfo', `${res?.data?.total || res?.total || allUsers.length} users`);
+}
+
+function renderUsers(list) {
+  const tb = document.getElementById('usersTable');
+  if (!list.length) { tb.innerHTML = '<tr><td colspan="7" class="empty-state">No users found</td></tr>'; return; }
+  tb.innerHTML = list.map(u => `<tr>
+    <td>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <div class="withdraw-avatar" style="width:30px;height:30px;font-size:12px;">${(u.username||'?').charAt(0).toUpperCase()}</div>
+        <div><div class="fw6">${u.username||'—'}</div><div class="text-muted" style="font-size:11px;">${u.displayName||u.userType||''}</div></div>
+      </div>
+    </td>
+    <td style="font-size:12px;"><div>${u.email||'—'}</div><div class="text-muted">${u.phoneNumber||''}</div></td>
+    <td><span class="badge ${kycBadge(u.kycStatus)}">${u.kycStatus?.replace('_',' ')||'—'}</span></td>
+    <td><span class="badge ${u.isActive?'green':'red'}">${u.isActive?'Active':'Inactive'}</span></td>
+    <td class="mono">${u.totalReferrals||0}</td>
+    <td style="font-size:12px;">${fmtDate(u.createdAt)}</td>
+    <td>
+      <div style="display:flex;gap:4px;">
+        <button class="btn btn-outline btn-xs" onclick="viewUser('${u.id}')">View</button>
+        <button class="btn btn-xs ${u.isActive?'btn-danger':'btn-success'}" onclick="toggleUser('${u.id}',${u.isActive})">${u.isActive?'Suspend':'Activate'}</button>
+      </div>
+    </td>
+  </tr>`).join('');
+}
+
+function filterUsers(q) {
+  renderUsers(allUsers.filter(u =>
+    (u.username||'').toLowerCase().includes(q.toLowerCase()) ||
+    (u.email||'').toLowerCase().includes(q.toLowerCase()) ||
+    (u.phoneNumber||'').includes(q)
+  ));
+}
+
+function kycBadge(s) {
+  return {verified:'green',pending:'yellow',rejected:'red',not_submitted:'gray'}[s] || 'gray';
+}
+
+async function viewUser(id) {
+  openModal('userModal');
+  document.getElementById('userModalBody').innerHTML = '<div class="empty-state">Loading…</div>';
+  const res = await api(`/admin/users/${id}`);
+  const u = res?.data || res?.user || res;
+  if (!u || !u.id) { document.getElementById('userModalBody').innerHTML = '<div class="alert danger">Failed to load user details</div>'; return; }
+  pendingUserModal = u;
+  document.getElementById('userModalTitle').textContent = `@${u.username}`;
+  document.getElementById('deactivateBtn').textContent = u.isActive ? 'Suspend User' : 'Activate User';
+  document.getElementById('deactivateBtn').className = 'btn btn-sm ' + (u.isActive ? 'btn-danger' : 'btn-success');
+
+  // Fetch wallet too
+  const wRes = await api(`/admin/wallet-balances/${id}`);
+  const w = wRes?.data?.wallet || wRes?.wallet || {};
+
+  document.getElementById('userModalBody').innerHTML = `
+    <div class="user-detail-card" style="flex-direction:column;gap:14px;">
+      <div style="display:flex;gap:16px;align-items:flex-start;">
+        <div class="user-big-avatar">${(u.username||'?').charAt(0).toUpperCase()}</div>
+        <div class="user-detail-info">
+          <div class="user-detail-name">@${u.username}</div>
+          <div class="user-detail-meta">${u.email||'No email'} · ${u.phoneNumber||'No phone'}</div>
+          <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">
+            <span class="badge ${u.isActive?'green':'red'}">${u.isActive?'Active':'Inactive'}</span>
+            <span class="badge ${kycBadge(u.kycStatus)}">${u.kycStatus?.replace('_',' ')||'—'}</span>
+            <span class="badge purple">${u.userType||'user'}</span>
+            ${u.phoneVerified?'<span class="badge green">Phone Verified</span>':''}
+          </div>
+        </div>
+      </div>
+      <div class="user-stats-row">
+        <div class="user-stat-item"><div class="label">Balance</div><div class="value" style="color:var(--green);">₦${fmt(w.balance||0)}</div></div>
+        <div class="user-stat-item"><div class="label">Total Deposits</div><div class="value">₦${fmt(w.totalDeposits||0)}</div></div>
+        <div class="user-stat-item"><div class="label">Total Withdrawals</div><div class="value">₦${fmt(w.totalWithdrawals||0)}</div></div>
+        <div class="user-stat-item"><div class="label">Tips Received</div><div class="value">₦${fmt(w.totalTipsReceived||0)}</div></div>
+        <div class="user-stat-item"><div class="label">Referrals</div><div class="value">${fmt(u.totalReferrals||0)}</div></div>
+        <div class="user-stat-item"><div class="label">Streak</div><div class="value">${u.currentStreak||0}d</div></div>
+      </div>
+    </div>
+    <div>
+      <div class="fw6" style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">Account Info</div>
+      <div class="form-row">
+        <div><span class="text-muted">Joined:</span> ${fmtDate(u.createdAt)}</div>
+        <div><span class="text-muted">Last Login:</span> ${fmtDate(u.lastLoginAt)}</div>
+      </div>
+      <div class="form-row mt-4">
+        <div><span class="text-muted">Referral Code:</span> <span class="mono fw6">${u.referralCode||'—'}</span></div>
+        <div><span class="text-muted">Referred By:</span> ${u.referredBy||'—'}</div>
+      </div>
+    </div>`;
+}
+
+async function toggleUserFromModal() {
+  if (!pendingUserModal) return;
+  await toggleUser(pendingUserModal.id, pendingUserModal.isActive);
+  closeModal('userModal');
+}
+
+async function toggleUser(id, isActive) {
+  const res = await api(`/admin/users/${id}/status`, {
+    method: 'PUT',
+    body: JSON.stringify({ isActive: !isActive })
+  });
+  if (res?.success || res?.message) {
+    toast(isActive ? 'User suspended' : 'User activated', isActive ? 'warning' : 'success');
+    loadUsers();
+  } else {
+    toast(res?.error || 'Failed to update user', 'error');
+  }
+}
+
+async function createUser() {
+  const body = {
+    username: document.getElementById('cu-username').value.trim(),
+    email: document.getElementById('cu-email').value.trim(),
+    phoneNumber: document.getElementById('cu-phone').value.trim(),
+    password: document.getElementById('cu-password').value,
+    userType: document.getElementById('cu-type').value
+  };
+  if (!body.username || !body.password) { toast('Username and password are required', 'warning'); return; }
+  const res = await api('/admin/users', { method: 'POST', body: JSON.stringify(body) });
+  if (res?.success || res?.user) {
+    toast('User created ✅', 'success');
+    closeModal('createUserModal');
+    loadUsers();
+  } else {
+    toast(res?.error || 'Failed to create user', 'error');
+  }
+}
+
+// ── KYC ───────────────────────────────────────────────
+async function loadKyc(status = 'pending') {
+  const res = await api(`/admin/kyc?status=${status}&limit=100`);
+  allKyc = res?.data?.kyc || res?.kyc || [];
+  renderKyc(allKyc);
+  setEl('kycPagInfo', `${allKyc.length} records`);
+}
+
+function renderKyc(list) {
+  const tb = document.getElementById('kycTable');
+  if (!list.length) { tb.innerHTML = '<tr><td colspan="5" class="empty-state">No KYC records found</td></tr>'; return; }
+  tb.innerHTML = list.map(k => `<tr>
+    <td class="fw6">${k.userId?.slice(0,14)||'—'}</td>
+    <td><span class="tag">${k.documentType||'ID Card'}</span></td>
+    <td style="font-size:12px;">${fmtDate(k.createdAt)}</td>
+    <td><span class="badge ${kycBadge(k.status)}">${k.status||'pending'}</span></td>
+    <td><button class="btn btn-outline btn-xs" onclick="viewKyc('${k.id}')">Review</button></td>
+  </tr>`).join('');
+}
+
+function filterKyc(q) {
+  renderKyc(allKyc.filter(k => JSON.stringify(k).toLowerCase().includes(q.toLowerCase())));
+}
+
+function viewKyc(id) {
+  pendingKycId = id;
+  const k = allKyc.find(x => x.id === id) || {};
+  document.getElementById('kycModalBody').innerHTML = `
+    <div class="alert info">Review the submitted identity documents carefully before approving.</div>
+    <div class="form-row">
+      <div class="form-group">
+        <div class="fw6">User ID</div>
+        <div class="mono" style="font-size:12px;">${k.userId||'—'}</div>
+      </div>
+      <div class="form-group">
+        <div class="fw6">Document Type</div>
+        <div>${k.documentType||'ID Card'}</div>
+      </div>
+    </div>
+    <div class="form-group">
+      <div class="fw6">Submitted</div>
+      <div style="font-size:12px;">${fmtDate(k.createdAt)}</div>
+    </div>
+    <div class="kyc-doc-preview">📄 Document preview — view in full backend portal<br><small>${k.documentUrl||'No URL available'}</small></div>
+    <div class="form-group">
+      <label class="form-label">Review Note (optional)</label>
+      <textarea class="form-textarea" id="kycNote" placeholder="Reason for approval or rejection…"></textarea>
+    </div>`;
+  openModal('kycModal');
+}
+
+async function updateKyc(status) {
+  const note = document.getElementById('kycNote')?.value || '';
+  const res = await api(`/admin/kyc/${pendingKycId}/status`, {
+    method: 'PUT',
+    body: JSON.stringify({ status, notes: note })
+  });
+  if (res?.success || res?.message) {
+    toast(`KYC ${status} ✅`, status === 'approved' ? 'success' : 'warning');
+    closeModal('kycModal');
+    loadKyc(document.getElementById('kycStatusFilter').value);
+    loadDashboard();
+  } else {
+    toast(res?.error || 'Failed to update KYC', 'error');
+  }
+}
+
+// ── ANALYTICS ────────────────────────────────────────
+async function loadAnalytics() {
+  const [rt, tipping, referrals] = await Promise.all([
+    api('/admin/analytics/realtime'),
+    api('/admin/analytics/tipping-earnings'),
+    api('/admin/analytics/referrals')
+  ]);
+
+  const rtd = rt?.data || rt || {};
+  setEl('an-tx24', fmt(rtd.last24h?.transactions || 0));
+  setEl('an-vol24', '₦' + shortNum(rtd.last24h?.volume || 0));
+  setEl('an-u24', fmt(rtd.last24h?.users || 0));
+
+  const td = tipping?.data?.tippingActivity || tipping?.tippingActivity || {};
+  document.getElementById('tippingCard').innerHTML = `
+    <div class="user-stats-row">
+      <div class="user-stat-item"><div class="label">Tips Sent</div><div class="value">${fmt(td.totalTipsSent||0)}</div></div>
+      <div class="user-stat-item"><div class="label">Tips Received</div><div class="value">${fmt(td.totalTipsReceived||0)}</div></div>
+      <div class="user-stat-item"><div class="label">Avg Tip</div><div class="value">₦${fmt(Math.round(td.averageTipAmount||0))}</div></div>
+      <div class="user-stat-item"><div class="label">Total Volume</div><div class="value" style="color:var(--green);">₦${shortNum(td.totalTipVolume||0)}</div></div>
+    </div>`;
+
+  const ed = tipping?.data?.platformEarnings || tipping?.platformEarnings || {};
+  document.getElementById('earningsCard').innerHTML = `
+    <div class="user-stats-row">
+      <div class="user-stat-item"><div class="label">Tip Fees</div><div class="value">₦${fmt(ed.tipFees||0)}</div></div>
+      <div class="user-stat-item"><div class="label">Withdrawal Fees</div><div class="value">₦${fmt(ed.withdrawalFees||0)}</div></div>
+      <div class="user-stat-item"><div class="label">Total Earnings</div><div class="value" style="color:var(--purple);font-size:20px;">₦${shortNum(ed.totalEarnings||0)}</div></div>
+    </div>`;
+
+  const rl = referrals?.data?.referrerLeaderboard || referrals?.referrerLeaderboard || [];
+  const refTb = document.getElementById('referralTable');
+  if (!rl.length) { refTb.innerHTML = '<tr><td colspan="4" class="empty-state">No referral data</td></tr>'; return; }
+  refTb.innerHTML = rl.map((r,i) => `<tr>
+    <td><strong>#${r.rank||i+1}</strong></td>
+    <td class="fw6">${r.username||r.userId?.slice(0,12)||'—'}</td>
+    <td class="mono">${fmt(r.totalReferrals||0)}</td>
+    <td class="fw7 mono" style="color:var(--green);">₦${fmt(r.totalBonusEarned||0)}</td>
+  </tr>`).join('');
+}
+
+// ── TIPS ──────────────────────────────────────────────
+async function loadTips() {
+  const res = await api('/admin/transactions?type=tip_sent&limit=100');
+  const list = res?.data?.transactions || res?.transactions || [];
+  const tb = document.getElementById('tipsTable');
+  if (!list.length) { tb.innerHTML = '<tr><td colspan="5" class="empty-state">No tips found</td></tr>'; return; }
+  tb.innerHTML = list.map(t => `<tr>
+    <td class="fw6">${t.senderId?.slice(0,12)||t.userId?.slice(0,12)||'—'}</td>
+    <td>${t.recipientId?.slice(0,12)||'—'}</td>
+    <td class="fw7 mono">₦${fmt(Math.abs(t.amount))}</td>
+    <td style="font-size:12px;max-width:200px;overflow:hidden;text-overflow:ellipsis;">${t.metadata?.tipDetails?.message||t.description||'—'}</td>
+    <td style="font-size:12px;">${fmtDate(t.createdAt)}</td>
+  </tr>`).join('');
+}
+
+function filterTips(q) { /* local filter */ }
+
+// ── ANNOUNCEMENTS ─────────────────────────────────────
+function renderAnnouncements() {
+  const el = document.getElementById('annList');
+  if (!announcements.length) { el.innerHTML = '<div class="empty-state"><div class="empty-icon">📣</div>No announcements yet.</div>'; return; }
+  el.innerHTML = announcements.slice().reverse().map((a,i) => {
+    const icons = {info:'ℹ️',success:'✅',warning:'⚠️',danger:'🚨'};
+    return `<div class="announcement-item">
+      <div class="ann-icon ${a.type}">${icons[a.type]||'📣'}</div>
+      <div class="ann-content">
+        <div class="ann-title">${a.title}</div>
+        <div class="ann-body">${a.body}</div>
+        ${a.link ? `<div class="ann-link">🔗 <a href="${a.link}" target="_blank">${a.link}</a></div>` : ''}
+        <div class="ann-meta">
+          <span>👥 ${a.audience}</span>
+          <span>🕐 ${fmtDate(a.sentAt)}</span>
+        </div>
+      </div>
+      <div class="ann-actions">
+        <button class="btn btn-danger btn-xs" onclick="deleteAnn(${announcements.length-1-i})">🗑</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function sendAnnouncement() {
+  const title = document.getElementById('annTitle').value.trim();
+  const body = document.getElementById('annBody').value.trim();
+  const link = document.getElementById('annLink').value.trim();
+  const type = document.getElementById('annType').value;
+  const audience = document.getElementById('annAudience').value;
+  if (!title || !body) { toast('Title and message are required', 'warning'); return; }
+
+  // Send via backend bulk notification
+  const res = await api('/admin/notifications/bulk', {
+    method: 'POST',
+    body: JSON.stringify({ title, message: body + (link ? `\n${link}` : ''), type: 'system' })
+  });
+
+  const success = res?.success || res?.message;
+  const ann = { title, body, link, type, audience, sentAt: new Date().toISOString(), success };
+  announcements.push(ann);
+  localStorage.setItem('givta_announcements', JSON.stringify(announcements));
+  renderAnnouncements();
+  clearAnnouncement();
+  toast(success ? '📣 Announcement broadcast!' : '📣 Announcement saved (API unavailable)', success ? 'success' : 'warning');
+}
+
+function clearAnnouncement() {
+  ['annTitle','annBody','annLink'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('annType').value = 'info';
+  document.getElementById('annAudience').value = 'all';
+}
+
+function deleteAnn(idx) {
+  announcements.splice(idx, 1);
+  localStorage.setItem('givta_announcements', JSON.stringify(announcements));
+  renderAnnouncements();
+  toast('Announcement removed', 'warning');
+}
+
+// ── WALLET CREDIT ─────────────────────────────────────
+async function creditWallet() {
+  const userId = document.getElementById('creditUserId').value.trim();
+  const amount = parseFloat(document.getElementById('creditAmount').value);
+  const description = document.getElementById('creditDesc').value.trim();
+  if (!userId || !amount || amount <= 0) { toast('User ID and valid amount required', 'warning'); return; }
+  const res = await api('/admin/wallet/credit', {
+    method: 'POST',
+    body: JSON.stringify({ userId, amount, description })
+  });
+  if (res?.success) {
+    toast(`₦${fmt(amount)} credited ✅`, 'success');
+    clearCredit();
+    loadDashboard();
+  } else {
+    toast(res?.error || 'Credit failed — check user ID', 'error');
+  }
+}
+
+function clearCredit() {
+  ['creditUserId','creditAmount','creditDesc'].forEach(id => document.getElementById(id).value = '');
+}
+
+// ── SETTINGS ──────────────────────────────────────────
+async function loadSettings() {
+  // Load from backend system settings if available
+  const res = await api('/admin/health'); // use health as proxy; actual settings endpoint varies
+  // Just use local defaults for now — real values come from SystemSettingsService
+  toast('Settings loaded from defaults', 'info');
+}
+
+async function saveSettings() {
+  // Collect all settings
+  const settings = {
+    payments: {
+      instantWithdrawalEnabled: document.getElementById('s-instantWd').checked,
+      withdrawalMinAmount: +document.getElementById('s-minWd').value,
+      withdrawalMaxAmount: +document.getElementById('s-maxWd').value,
+      withdrawalFee: +document.getElementById('s-wdFee').value / 100,
+      paystackFee: +document.getElementById('s-psFee').value / 100,
+    },
+    platform: {
+      minTipAmount: +document.getElementById('s-minTip').value,
+      maxTipAmount: +document.getElementById('s-maxTip').value,
+      maintenanceMode: document.getElementById('s-maintenance').checked,
+      maintenanceMessage: document.getElementById('s-maintMsg').value
+    },
+    features: {
+      challengesEnabled: document.getElementById('f-challenges').checked,
+      sponsoredChallengesEnabled: document.getElementById('f-sponsored').checked,
+      tippingGoalsEnabled: document.getElementById('f-goals').checked,
+      LeaderboardsEnabled: document.getElementById('f-leaderboard').checked,
+      referralsEnabled: document.getElementById('f-referrals').checked,
+      gamificationEnabled: document.getElementById('f-gamification').checked,
+      socialSharingEnabled: document.getElementById('f-social').checked,
+      affiliateProgramEnabled: document.getElementById('f-affiliate').checked,
+    },
+    security: {
+      kycRequired: document.getElementById('s-kycReq').checked,
+      twoFactorRequired: document.getElementById('s-2fa').checked,
+      maxLoginAttempts: +document.getElementById('s-maxLogin').value,
+      accountLockoutDuration: +document.getElementById('s-lockout').value,
+      kycForWithdrawalMinAmount: +document.getElementById('s-kycWd').value,
+    },
+    notifications: {
+      emailEnabled: document.getElementById('n-email').checked,
+      smsEnabled: document.getElementById('n-sms').checked,
+      pushEnabled: document.getElementById('n-push').checked,
+      whatsappEnabled: document.getElementById('n-whatsapp').checked,
+      emailFromAddress: document.getElementById('n-fromEmail').value,
+      emailFromName: document.getElementById('n-fromName').value,
+    },
+    gamification: {
+      topTipperBonus: +document.getElementById('g-1st').value,
+      secondTipperBonus: +document.getElementById('g-2nd').value,
+      thirdTipperBonus: +document.getElementById('g-3rd').value,
+      streakBonuses: {
+        day3: +document.getElementById('g-s3').value,
+        day7: +document.getElementById('g-s7').value,
+        day14: +document.getElementById('g-s14').value,
+        day30: +document.getElementById('g-s30').value,
+      }
+    }
+  };
+  localStorage.setItem('givta_settings', JSON.stringify(settings));
+  toast('Settings saved ✅', 'success');
+}
+
+function toggleMaintenance(el) {
+  document.getElementById('maintenanceMsgWrap').style.display = el.checked ? 'block' : 'none';
+  if (el.checked) toast('⚠️ Maintenance mode will disable the app for users!', 'warning');
+}
+
+// ── LOGS ─────────────────────────────────────────────
+async function loadLogs(action = '') {
+  const q = action ? `?action=${action}&limit=100` : '?limit=100';
+  const res = await api('/admin/audit' + q);
+  allLogs = res?.data?.logs || res?.logs || [];
+  renderLogs(allLogs);
+  setEl('logPagInfo', `${allLogs.length} log entries`);
+}
+
+function renderLogs(list) {
+  const tb = document.getElementById('logsTable');
+  if (!list.length) { tb.innerHTML = '<tr><td colspan="5" class="empty-state">No logs found</td></tr>'; return; }
+  tb.innerHTML = list.map(l => `<tr>
+    <td style="font-size:11px;" class="mono">${fmtDate(l.createdAt||l.timestamp)}</td>
+    <td class="fw6">${l.adminId?.slice(0,12)||'system'}</td>
+    <td><span class="tag">${l.action||'—'}</span></td>
+    <td class="mono">${l.targetId?.slice(0,14)||'—'}</td>
+    <td style="font-size:12px;max-width:240px;overflow:hidden;text-overflow:ellipsis;">${l.details||JSON.stringify(l.metadata||{}).slice(0,60)}</td>
+  </tr>`).join('');
+}
+
+function filterLogs(q) {
+  renderLogs(allLogs.filter(l => JSON.stringify(l).toLowerCase().includes(q.toLowerCase())));
+}
+
+// ── HEALTH ────────────────────────────────────────────
+async function loadHealth() {
+  const res = await api('/admin/health/details');
+  const d = res?.data || res || {};
+  const status = d.status || 'unknown';
+  const colors = {healthy:'green', warning:'yellow', critical:'red', unknown:'gray'};
+  setEl('healthStatus', status.toUpperCase());
+  setEl('healthUptime', fmtUptime(d.uptime || 0));
+  setEl('healthDB', (d.database?.responseTime||0) + 'ms');
+  document.getElementById('healthStatusCard').className = `stat-card ${colors[status]||'gray'}`;
+
+  document.getElementById('memCard').innerHTML = `
+    <div style="margin-bottom:14px;">
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+        <span class="fw6">Heap Used</span>
+        <span class="mono">${d.memory?.used||0}MB / ${d.memory?.total||0}MB</span>
+      </div>
+      <div style="background:var(--bg);border-radius:4px;height:10px;overflow:hidden;">
+        <div style="background:var(--purple);height:100%;width:${d.memory?.percentage||0}%;border-radius:4px;transition:width .5s;"></div>
+      </div>
+      <div class="text-muted mt-4" style="font-size:11px;">${d.memory?.percentage||0}% utilisation</div>
+    </div>`;
+
+  const svc = d.services || {};
+  document.getElementById('servicesCard').innerHTML = `
+    ${serviceRow('💬 WhatsApp', svc.whatsapp)}
+    ${serviceRow('🔔 Notifications', svc.notifications)}
+    ${serviceRow('💳 Payments', svc.payments)}
+    ${serviceRow('🗄️ Database', d.database?.status)}`;
+}
+
+function serviceRow(name, status) {
+  const ok = status === 'connected' || status === 'operational';
+  return `<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);">
+    <span>${name}</span>
+    <span class="badge ${ok?'green':'red'}">${status||'unknown'}</span>
+  </div>`;
+}
+
+// ── UTILS ─────────────────────────────────────────────
+function fmt(n) {
+  if (n === undefined || n === null || n === '—') return '—';
+  return Number(n).toLocaleString('en-NG');
+}
+
+function shortNum(n) {
+  n = +n;
+  if (n >= 1e9) return (n/1e9).toFixed(1) + 'B';
+  if (n >= 1e6) return (n/1e6).toFixed(1) + 'M';
+  if (n >= 1e3) return (n/1e3).toFixed(1) + 'K';
+  return fmt(n);
+}
+
+function fmtDate(d) {
+  if (!d) return '—';
+  const dt = d?.toDate ? d.toDate() : new Date(d);
+  return dt.toLocaleDateString('en-NG', { day:'2-digit', month:'short', year:'numeric' });
+}
+
+function relTime(d) {
+  if (!d) return '—';
+  const dt = d?.toDate ? d.toDate() : new Date(d);
+  const diff = Date.now() - dt.getTime();
+  if (diff < 60000) return 'just now';
+  if (diff < 3600000) return Math.floor(diff/60000) + 'm ago';
+  if (diff < 86400000) return Math.floor(diff/3600000) + 'h ago';
+  return Math.floor(diff/86400000) + 'd ago';
+}
+
+function fmtUptime(s) {
+  const h = Math.floor(s/3600), m = Math.floor((s%3600)/60);
+  return `${h}h ${m}m`;
+}
+
+function capitalize(s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : ''; }
+
+function setEl(id, val) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = val;
+}
+
+// ── MODALS ────────────────────────────────────────────
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-overlay').forEach(m => {
+  m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); });
+});
+
+// ── TOAST ─────────────────────────────────────────────
+function toast(msg, type = 'info') {
+  const icons = { success:'✅', error:'❌', warning:'⚠️', info:'ℹ️' };
+  const t = document.createElement('div');
+  t.className = `toast ${type}`;
+  t.innerHTML = `<span>${icons[type]||''}</span> <span>${msg}</span>`;
+  document.getElementById('toastContainer').appendChild(t);
+  setTimeout(() => t.remove(), 3500);
+}
+
+// ── REFRESH ───────────────────────────────────────────
+function refreshData() {
+  const active = document.querySelector('.page.active')?.id?.replace('page-', '');
+  if (!active) return;
+  toast('Refreshing…');
+  goPage(active, document.querySelector(`.nav-item.active`));
+}
+
+// ── LOGIN CHECK ───────────────────────────────────────
+async function checkAuth() {
+  if (!TOKEN) {
+    // Prompt for token
+    const t = prompt('Enter your Givta Admin JWT token (or set window.GIVTA_API_URL in console):');
+    if (t) { TOKEN = t; localStorage.setItem('givta_admin_token', t); }
+  }
+  // Verify
+  const res = await api('/admin/check-admin');
+  if (res && (res.isAdmin || res.success)) {
+    toast('Authenticated as admin ✅', 'success');
+  } else if (TOKEN) {
+    toast('⚠️ API unreachable — running in demo mode', 'warning');
+  }
+}
+
+// ── INIT ──────────────────────────────────────────────
+(async () => {
+  await checkAuth();
+  await loadDashboard();
+})();
+</script>
+</body>
+</html>

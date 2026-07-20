@@ -1,30 +1,207 @@
 {
   "expo": {
-    "name": "givta",
+    "name": "Givta",
     "slug": "givta",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "newArchEnabled": true,
-    "splash": {
-      "image": "./assets/splash-icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
-    },
+    "scheme": "givta",
+    "backgroundColor": "#4B0082",
+    "primaryColor": "#4B0082",
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.givta.app",
+      "buildNumber": "1.0.0",
+      "requireFullScreen": false,
+      "isTabletOnly": false,
+      "splash": {
+        "image": "./assets/splash-icon.png",
+        "resizeMode": "contain",
+        "backgroundColor": "#4B0082"
+      },
+      "infoPlist": {
+        "NSCameraUsageDescription": "This app uses the camera for profile pictures and QR code scanning.",
+        "NSPhotoLibraryUsageDescription": "This app uses the photo library to upload profile pictures.",
+        "NSLocationWhenInUseUsageDescription": "This app uses location to provide location-based services.",
+        "NSAppTransportSecurity": {
+          "NSAllowsArbitraryLoads": true,
+          "NSExceptionDomains": {
+            "localhost": {
+              "NSExceptionAllowsInsecureHTTPLoads": true
+            },
+            "exp.direct": {
+              "NSExceptionAllowsInsecureHTTPLoads": true
+            },
+            "expo.dev": {
+              "NSExceptionAllowsInsecureHTTPLoads": true
+            }
+          }
+        },
+        "CFBundleURLTypes": [
+          {
+            "CFBundleURLSchemes": [
+              "givta"
+            ]
+          }
+        ],
+        "LSApplicationQueriesSchemes": [
+          "whatsapp"
+        ]
+      },
+      "associatedDomains": [
+        "applinks:givta.app"
+      ],
+      "config": {
+        "usesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#4B0082"
       },
-      "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "splash": {
+        "image": "./assets/splash-icon.png",
+        "resizeMode": "contain",
+        "backgroundColor": "#4B0082"
+      },
+      "package": "com.givta.app",
+      "versionCode": 1,
+      "permissions": [
+        "android.permission.INTERNET",
+        "android.permission.ACCESS_NETWORK_STATE",
+        "android.permission.WAKE_LOCK",
+        "android.permission.VIBRATE",
+        "android.permission.RECEIVE_BOOT_COMPLETED",
+        "com.android.alarm.permission.SET_ALARM"
+      ],
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "data": {
+            "scheme": "givta"
+          },
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
+        },
+        {
+          "action": "VIEW",
+          "data": {
+            "scheme": "https",
+            "host": "givta.app",
+            "pathPrefix": "/tip"
+          },
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
+        },
+        {
+          "action": "VIEW",
+          "data": {
+            "scheme": "https",
+            "host": "givta.app",
+            "pathPrefix": "/tip-share"
+          },
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
+        },
+        {
+          "action": "VIEW",
+          "data": {
+            "scheme": "https",
+            "host": "givta.app",
+            "pathPrefix": "/ref"
+          },
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
+        },
+        {
+          "action": "VIEW",
+          "data": {
+            "scheme": "https",
+            "host": "givta.app",
+            "pathPrefix": "/challenge"
+          },
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
+        }
+      ],
+      "googleServicesFile": "./google-services.json"
     },
     "web": {
-      "favicon": "./assets/favicon.png"
-    }
+      "favicon": "./assets/favicon.png",
+      "name": "Givta",
+      "shortName": "Givta",
+      "lang": "en",
+      "scope": "/",
+      "themeColor": "#4B0082",
+      "description": "Social payment & tipping app with referral rewards",
+      "dir": "ltr",
+      "display": "standalone",
+      "startUrl": "/",
+      "orientation": "portrait",
+      "backgroundColor": "#4B0082",
+      "barStyle": "default",
+      "dangerouslyGetFullBundleUrl": false
+    },
+    "plugins": [
+      [
+        "expo-notifications",
+        {
+          "color": "#4B0082",
+          "defaultChannel": "default"
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "compileSdkVersion": 36,
+            "targetSdkVersion": 36,
+            "minSdkVersion": 24,
+            "buildToolsVersion": "36.0.0",
+            "kotlinVersion": "2.0.21"
+          },
+          "ios": {
+            "deploymentTarget": "16.4"
+          }
+        }
+      ],
+      [
+        "expo-secure-store",
+        {
+          "faceIDPermission": "Allow $(PRODUCT_NAME) to use Face ID."
+        }
+      ],
+      "expo-font",
+      "expo-web-browser",
+      "expo-status-bar"
+    ],
+    "experiments": {},
+    "updates": {
+      "url": "https://u.expo.dev/2e4a833f-cd14-487f-aede-d463dd8b27a1"
+    },
+    "runtimeVersion": {
+      "policy": "sdkVersion"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "2e4a833f-cd14-487f-aede-d463dd8b27a1"
+      }
+    },
+    "owner": "unusualdan"
   }
 }

@@ -3,6 +3,13 @@
 # dependencies
 node_modules/
 
+
+.env
+google-services.json
+GoogleService-Info.plist
+*.zip
+
+
 # Expo
 .expo/
 dist/
@@ -13,6 +20,7 @@ expo-env.d.ts
 .kotlin/
 *.orig.*
 *.jks
+*.keystore
 *.p8
 *.p12
 *.key
@@ -32,6 +40,13 @@ yarn-error.*
 
 # local env files
 .env*.local
+.env
+
+# Keystore info (contains sensitive credentials)
+KEYSTORE_INFO.md
+# Firebase configuration files (keep templates)
+# google-services.json  # Temporarily included for build
+# ios/GoogleService-Info.plist  # Temporarily included for build
 
 # typescript
 *.tsbuildinfo
