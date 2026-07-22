@@ -7,16 +7,6 @@ import { WalletProvider } from './src/contexts/WalletContext';
 import { AppNavigator } from './src/navigation/AppNavigator';
 import { apiService } from './src/services/api';
 
-const WebLandingScreen = () => (
-  <View style={styles.webLandingContainer}>
-    <iframe
-      src="/givta-landing.html"
-      title="Givta landing page"
-      style={styles.webFrame}
-    />
-  </View>
-);
-
 // Dynamically import expo-notifications to avoid native module crash in Expo Go (SDK 53+)
 import Constants from 'expo-constants';
 
@@ -26,10 +16,6 @@ const isExpoGo = Constants.executionEnvironment === 'storeClient';
 const canUsePushNotifications = !isExpoGo;
 
 export default function App() {
-  if (Platform.OS === 'web') {
-    return <WebLandingScreen />;
-  }
-
   useEffect(() => {
     if (!canUsePushNotifications) {
       console.log('📱 Push notifications not available in Expo Go. Use a development build for push support.');
@@ -164,16 +150,5 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f8f9fa',
-  },
-  webLandingContainer: {
-    flex: 1,
-    width: '100%',
-    height: '100%',
-    backgroundColor: '#ffffff',
-  },
-  webFrame: {
-    width: '100%',
-    height: '100%',
-    border: 'none',
   },
 });
