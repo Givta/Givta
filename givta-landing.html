@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Givta — Get tipped. Get appreciated.</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#FFFFFF; --bg-soft:#F6F3FE; --ink:#160F2E; --muted:#68607E;
+    --primary:#5B45E0; --primary-dark:#4735C4; --primary-tint:#EEE9FE;
+    --green:#16A34A; --green-tint:#E9FAEF; --coral:#F0506E; --gold:#F2A93C; --line:#EAE5F7; --radius:20px;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{background:var(--bg);color:var(--ink);font-family:'Inter',sans-serif;line-height:1.5;-webkit-font-smoothing:antialiased;overflow-x:hidden;}
+  h1,h2,h3{font-family:'Plus Jakarta Sans',sans-serif;}
+  .mono{font-family:'JetBrains Mono',monospace;}
+  a{color:inherit;text-decoration:none;}
+  img{display:block;width:100%;height:100%;object-fit:cover;}
+  ul{list-style:none;}
+  .band{width:100%;position:relative;}
+  .inner{max-width:1360px;margin:0 auto;padding:0 32px;}
+  @media(max-width:720px){.inner{padding:0 20px;}}
+  .ava{border-radius:50%;overflow:hidden;flex-shrink:0;background:linear-gradient(135deg,var(--primary),#8B7CF6);}
+
+  /* ---------- NAV ---------- */
+  nav.band{position:sticky;top:0;z-index:70;background:rgba(255,255,255,0.88);backdrop-filter:blur(16px);border-bottom:1px solid var(--line);}
+  nav .inner{display:flex;align-items:center;justify-content:space-between;padding:15px 32px;}
+  .logo-block{display:flex;align-items:center;gap:9px;}
+  .logo-mark{width:32px;height:32px;border-radius:9px;background:linear-gradient(135deg,var(--primary),#8B7CF6);display:flex;align-items:center;justify-content:center;color:#fff;font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:15px;}
+  .logo-block b{font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:18px;letter-spacing:-0.02em;}
+  .nav-links{display:flex;align-items:center;gap:28px;}
+  .nav-links a{color:var(--muted);font-size:14px;font-weight:600;}
+  .nav-links a:hover{color:var(--ink);}
+  @media(max-width:1080px){.nav-links a.hide-md{display:none;}}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:13px 22px;border-radius:11px;font-weight:700;font-size:14px;cursor:pointer;border:none;transition:transform .16s,box-shadow .16s,background .16s;white-space:nowrap;}
+  .btn-primary{background:var(--primary);color:#fff;box-shadow:0 10px 22px -8px rgba(91,69,224,0.55);}
+  .btn-primary:hover{background:var(--primary-dark);transform:translateY(-1px);}
+  .btn-ghost{background:#fff;color:var(--ink);border:1.5px solid var(--line);}
+  .btn-ghost:hover{border-color:var(--primary);color:var(--primary);}
+  .btn-white{background:#fff;color:var(--primary);}
+  .btn-white:hover{transform:translateY(-1px);box-shadow:0 10px 20px -10px rgba(0,0,0,0.25);}
+  .btn-sm{padding:9px 16px;font-size:13px;border-radius:9px;}
+
+  /* ---------- HERO ---------- */
+  .hero.band{background:linear-gradient(180deg,#FBFAFF,#fff);padding:56px 0 0;}
+  .hero-grid{display:grid;grid-template-columns:0.95fr 1.05fr;gap:44px;align-items:center;padding-bottom:56px;}
+  @media(max-width:980px){.hero-grid{grid-template-columns:1fr;}}
+  .eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:12.5px;font-weight:700;color:var(--primary);background:var(--primary-tint);padding:8px 15px;border-radius:999px;margin-bottom:20px;}
+  .hero h1{font-size:clamp(36px,4.4vw,52px);font-weight:800;line-height:1.08;letter-spacing:-0.025em;margin-bottom:20px;}
+  .hero h1 .accent{color:var(--primary);}
+  .hero p.lead{font-size:17px;color:var(--muted);max-width:440px;margin-bottom:28px;}
+  .cta-row{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:26px;}
+  .trust-row{display:flex;gap:26px;flex-wrap:wrap;}
+  .trust-row span{font-size:13px;color:var(--muted);font-weight:600;display:flex;align-items:center;gap:7px;}
+
+  .hero-stage{position:relative;border-radius:28px;overflow:hidden;min-height:520px;box-shadow:0 40px 80px -30px rgba(22,15,46,0.35);}
+  @media(max-width:980px){.hero-stage{min-height:440px;margin-top:10px;}}
+  .hero-photo{position:absolute;inset:0;}
+  .hero-photo::after{content:"";position:absolute;inset:0;background:linear-gradient(200deg,rgba(22,15,46,0.05) 30%,rgba(22,15,46,0.55) 100%);}
+  .hero-stage-inner{position:relative;height:100%;z-index:2;}
+
+  .toast{position:absolute;background:#fff;border-radius:14px;padding:11px 14px;box-shadow:0 16px 30px -12px rgba(21,15,46,0.35);display:flex;align-items:center;gap:10px;z-index:5;max-width:210px;}
+  .toast .ava{width:32px;height:32px;}
+  .toast .tt{font-size:12px;font-weight:700;color:var(--ink);}
+  .toast .ts{font-size:11px;color:var(--muted);margin-top:1px;}
+  .toast .amt{margin-left:auto;font-family:'JetBrains Mono',monospace;font-weight:700;color:var(--green);font-size:12.5px;}
+  .toast.t1{top:8%;left:4%;}
+  .toast.t2{top:33%;left:-2%;}
+  .toast.t3{top:58%;left:5%;}
+  @media(max-width:640px){.toast.t2, .toast.t3{display:none;}}
+
+  .phone-mock{position:absolute;right:5%;bottom:6%;width:180px;background:#150F2E;border-radius:22px;padding:8px;box-shadow:0 30px 50px -20px rgba(0,0,0,0.55);z-index:6;}
+  @media(max-width:640px){.phone-mock{display:none;}}
+  .phone-screen{background:#fff;border-radius:16px;padding:16px 12px;text-align:center;}
+  .phone-screen .ava{width:44px;height:44px;margin:0 auto 8px;}
+  .phone-screen .pname{font-size:12px;font-weight:800;}
+  .phone-screen .prole{font-size:9.5px;color:var(--muted);margin-bottom:10px;}
+  .amt-row{display:flex;gap:4px;margin-bottom:8px;}
+  .amt-pill{flex:1;font-size:9px;font-weight:700;padding:6px 0;border-radius:7px;background:#F2F0FB;color:var(--ink);}
+  .amt-pill.sel{background:var(--primary);color:#fff;}
+  .pay-btn{background:var(--primary);color:#fff;font-size:10.5px;font-weight:800;padding:8px 0;border-radius:8px;}
+
+  .qr-chip{position:absolute;left:6%;bottom:6%;background:#fff;border-radius:14px;padding:10px;box-shadow:0 16px 30px -12px rgba(21,15,46,0.35);z-index:5;text-align:center;}
+  @media(max-width:640px){.qr-chip{display:none;}}
+  .qr-chip .qr{width:48px;height:48px;background:repeating-conic-gradient(#150F2E 0% 25%, #fff 0% 50%) 0 0/8px 8px;border-radius:4px;margin-bottom:5px;}
+  .qr-chip span{font-size:9px;color:var(--muted);font-weight:700;}
+
+  /* ---------- TICKER (isolated, no overlap) ---------- */
+  .ticker.band{background:var(--ink);overflow:hidden;padding:14px 0;}
+  .ticker-track{display:flex;width:max-content;animation:scrollTicker 30s linear infinite;}
+  .ticker-item{display:flex;align-items:center;gap:9px;padding:0 30px;font-family:'JetBrains Mono',monospace;font-size:13px;color:#D9D3FF;border-right:1px solid rgba(255,255,255,0.12);white-space:nowrap;}
+  .ticker-item b{color:#fff;}
+  .ticker-item .up{color:#7CE7A0;}
+  @keyframes scrollTicker{from{transform:translateX(0);}to{transform:translateX(-50%);}}
+  @media (prefers-reduced-motion: reduce){.ticker-track{animation:none;}}
+
+  /* ---------- SECTION SHELL ---------- */
+  section.band{padding:96px 0;}
+  .section-head{max-width:600px;margin:0 auto 48px;text-align:center;}
+  .eyebrow-line{font-size:12px;font-weight:800;letter-spacing:0.09em;text-transform:uppercase;color:var(--primary);margin-bottom:12px;}
+  .section-head h2{font-size:clamp(27px,3.1vw,36px);font-weight:800;letter-spacing:-0.02em;margin-bottom:12px;}
+  .section-head p{color:var(--muted);font-size:16px;}
+  .reveal{opacity:0;transform:translateY(20px);transition:opacity .6s ease,transform .6s ease;}
+  .reveal.show{opacity:1;transform:translateY(0);}
+
+  /* ---------- WHO IS GIVTA FOR ---------- */
+  .who.band{background:var(--bg-soft);}
+  .who-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:16px;}
+  @media(max-width:980px){.who-grid{grid-template-columns:repeat(3,1fr);}}
+  @media(max-width:560px){.who-grid{grid-template-columns:repeat(2,1fr);}}
+  .who-card{background:#fff;border:1px solid var(--line);border-radius:16px;overflow:hidden;transition:transform .2s, box-shadow .2s;}
+  .who-card:hover{transform:translateY(-4px);box-shadow:0 18px 34px -18px rgba(21,15,46,0.2);}
+  .who-tile{height:100px;position:relative;}
+  .who-tile img{filter:saturate(1.05);}
+  .who-tile::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 50%,rgba(0,0,0,0.35));}
+  .who-card .wc-body{padding:14px 14px 18px;}
+  .who-card h3{font-size:13.5px;font-weight:700;margin-bottom:4px;}
+  .who-card p{font-size:11.5px;color:var(--muted);line-height:1.4;}
+
+  /* ---------- HOW GIVTA WORKS ---------- */
+  .flow{display:flex;align-items:flex-start;justify-content:space-between;gap:0;}
+  @media(max-width:900px){.flow{flex-direction:column;gap:28px;}}
+  .flow-step{flex:1;text-align:center;position:relative;padding:0 10px;}
+  .flow-connector{flex:0 0 40px;height:2px;background:repeating-linear-gradient(90deg,var(--line) 0 8px, transparent 8px 14px);margin-top:27px;}
+  @media(max-width:900px){.flow-connector{display:none;}.flow-step{display:flex;align-items:center;gap:16px;text-align:left;}}
+  .flow-icon{width:56px;height:56px;border-radius:16px;margin:0 auto 16px;display:flex;align-items:center;justify-content:center;font-size:24px;position:relative;flex-shrink:0;}
+  @media(max-width:900px){.flow-icon{margin:0;}}
+  .flow-badge{position:absolute;top:-8px;left:50%;transform:translateX(-50%);width:22px;height:22px;border-radius:50%;background:var(--primary);color:#fff;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;border:2.5px solid #fff;}
+  @media(max-width:900px){.flow-badge{left:-6px;top:-6px;}}
+  .flow-step h3{font-size:15.5px;font-weight:700;margin-bottom:6px;}
+  .flow-step p{font-size:13px;color:var(--muted);}
+
+  /* ---------- TESTIMONIALS ---------- */
+  .test.band{background:var(--bg-soft);}
+  .test-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;}
+  @media(max-width:900px){.test-grid{grid-template-columns:1fr;}}
+  .test-card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:26px;}
+  .test-quote{font-size:14.5px;color:var(--ink);margin-bottom:20px;line-height:1.6;}
+  .test-person{display:flex;align-items:center;gap:11px;}
+  .test-avatar{width:44px;height:44px;}
+  .test-name{font-weight:700;font-size:13.5px;}
+  .test-role{font-size:12px;color:var(--muted);}
+  .stars{color:var(--gold);font-size:12.5px;margin-bottom:12px;letter-spacing:2px;}
+
+  /* ---------- FINAL CTA ---------- */
+  .final-cta.band{background:linear-gradient(120deg,var(--primary),#7C6BF0);overflow:hidden;padding:0;}
+  .final-inner{display:grid;grid-template-columns:1fr 1fr;align-items:center;min-height:300px;}
+  @media(max-width:860px){.final-inner{grid-template-columns:1fr;}}
+  .final-copy{padding:64px 32px;}
+  @media(max-width:860px){.final-copy{padding:52px 24px 20px;}}
+  .final-copy h2{font-size:clamp(26px,3.6vw,38px);font-weight:800;letter-spacing:-0.02em;margin-bottom:12px;color:#fff;}
+  .final-copy p{color:#E3DEFC;font-size:15.5px;margin-bottom:28px;}
+  .final-photo{position:relative;height:300px;}
+  @media(max-width:860px){.final-photo{height:200px;}}
+  .final-photo img{filter:saturate(1.05);}
+  .final-photo::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,var(--primary) 0%, transparent 30%);}
+
+  footer.band{border-top:1px solid var(--line);padding:32px 0;}
+  footer .inner{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:14px;}
+  footer p{color:var(--muted);font-size:13px;}
+  footer .fl{display:flex;gap:22px;flex-wrap:wrap;}
+  footer .fl a{color:var(--muted);font-size:13px;font-weight:600;}
+  footer .fl a:hover{color:var(--primary);}
+
+  ::selection{background:var(--primary);color:#fff;}
+  :focus-visible{outline:2px solid var(--primary);outline-offset:3px;}
+</style>
+</head>
+<body>
+
+<nav class="band">
+  <div class="inner">
+    <div class="logo-block"><div class="logo-mark">G</div><b>Givta</b></div>
+    <div class="nav-links">
+      <a href="#how" class="hide-md">How it Works</a>
+      <a href="#who" class="hide-md">For Whom</a>
+      <a href="#features" class="hide-md">Features</a>
+      <a href="#faq" class="hide-md">FAQ</a>
+      <a href="#blog" class="hide-md">Blog</a>
+      <a href="https://app.givta.com.ng" class="hide-md">Log in</a>
+      <a href="https://app.givta.com.ng" class="btn btn-primary btn-sm">Create My Link Free</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero band">
+  <div class="inner">
+    <div class="hero-grid">
+      <div>
+        <span class="eyebrow">💜 The easiest way to receive tips and support</span>
+        <h1>Get tipped. Get appreciated. <span class="accent">Keep doing you.</span> 💜</h1>
+        <p class="lead">Create your Givta link once, share it anywhere, and start receiving tips, gifts and support from the people who value you.</p>
+        <div class="cta-row">
+          <a href="https://app.givta.com.ng" class="btn btn-primary">Create Your Givta Link Free →</a>
+          <a href="#how" class="btn btn-ghost">▶ Watch How It Works</a>
+        </div>
+        <div class="trust-row">
+          <span>🎁 100% Free to start</span>
+          <span>⚡ Instant Payouts</span>
+          <span>🛡️ Secure & Safe</span>
+        </div>
+      </div>
+
+      <div class="hero-stage">
+        <div class="hero-photo">
+          <img src="https://images.unsplash.com/photo-1687422811062-a966b55cb217?w=1000&h=1100&fit=crop&auto=format&q=80" alt="Creator smiling while checking a tip notification on his phone">
+        </div>
+        <div class="hero-stage-inner">
+          <div class="toast t1">
+            <div class="ava"><img src="https://images.unsplash.com/photo-1530785602389-07594beb8b73?w=80&h=80&fit=crop&auto=format&q=80" alt=""></div>
+            <div><div class="tt">Blessing sent you</div><div class="ts">2m ago</div></div>
+            <div class="amt">₦2,000</div>
+          </div>
+          <div class="toast t2">
+            <div class="ava"><img src="https://images.unsplash.com/photo-1617440431587-138ca5c563ec?w=80&h=80&fit=crop&auto=format&q=80" alt=""></div>
+            <div><div class="tt">Thanks for the tutorial!</div><div class="ts">5m ago</div></div>
+            <div class="amt">₦1,000</div>
+          </div>
+          <div class="toast t3">
+            <div class="ava"><img src="https://images.unsplash.com/photo-1602342323893-b11f757957c9?w=80&h=80&fit=crop&auto=format&q=80" alt=""></div>
+            <div><div class="tt">Keep inspiring 🔥</div><div class="ts">10m ago</div></div>
+            <div class="amt">₦5,000</div>
+          </div>
+
+          <div class="qr-chip"><div class="qr"></div><span>Scan to support</span></div>
+
+          <div class="phone-mock">
+            <div class="phone-screen">
+              <div class="ava"><img src="https://images.unsplash.com/photo-1602058746409-a4adc6d68270?w=100&h=100&fit=crop&auto=format&q=80" alt=""></div>
+              <div class="pname">Opeyemi Daniel</div>
+              <div class="prole">Content Creator</div>
+              <div class="amt-row">
+                <div class="amt-pill">₦500</div>
+                <div class="amt-pill sel">₦1,000</div>
+                <div class="amt-pill">₦5,000</div>
+              </div>
+              <div class="pay-btn">Pay Now →</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="ticker band">
+  <div class="ticker-track" id="tickerTrack"></div>
+</div>
+
+<section id="who" class="who band">
+  <div class="inner">
+    <div class="section-head reveal">
+      <div class="eyebrow-line">Who is Givta for?</div>
+      <h2>Anyone who creates value deserves support</h2>
+      <p>From creators to churches, everyone with a community can turn appreciation into income.</p>
+    </div>
+    <div class="who-grid reveal">
+      <div class="who-card">
+        <div class="who-tile"><img src="https://images.unsplash.com/photo-1617440431587-138ca5c563ec?w=300&h=200&fit=crop&auto=format&q=80" alt="Creator"></div>
+        <div class="wc-body"><h3>Creators & Influencers</h3><p>You create. They support.</p></div>
+      </div>
+      <div class="who-card">
+        <div class="who-tile"><img src="https://images.unsplash.com/photo-1615453262312-022a72d3842a?w=300&h=200&fit=crop&auto=format&q=80" alt="Student"></div>
+        <div class="wc-body"><h3>Students</h3><p>Get help from family & well-wishers.</p></div>
+      </div>
+      <div class="who-card">
+        <div class="who-tile"><img src="https://images.unsplash.com/photo-1602058746409-a4adc6d68270?w=300&h=200&fit=crop&auto=format&q=80" alt="Church member"></div>
+        <div class="wc-body"><h3>Churches</h3><p>Receive offerings & donations.</p></div>
+      </div>
+      <div class="who-card">
+        <div class="who-tile"><img src="https://images.unsplash.com/photo-1530785602389-07594beb8b73?w=300&h=200&fit=crop&auto=format&q=80" alt="Freelancer"></div>
+        <div class="wc-body"><h3>Freelancers</h3><p>Get paid for your skills.</p></div>
+      </div>
+      <div class="who-card">
+        <div class="who-tile"><img src="https://images.unsplash.com/photo-1602342323893-b11f757957c9?w=300&h=200&fit=crop&auto=format&q=80" alt="Streamer"></div>
+        <div class="wc-body"><h3>Streamers</h3><p>Let your fans support you.</p></div>
+      </div>
+      <div class="who-card">
+        <div class="who-tile"><img src="https://images.unsplash.com/photo-1687422811062-a966b55cb217?w=300&h=200&fit=crop&auto=format&q=80" alt="Community"></div>
+        <div class="wc-body"><h3>NGOs & Communities</h3><p>Raise funds for what matters.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="how" class="band">
+  <div class="inner">
+    <div class="section-head reveal">
+      <div class="eyebrow-line">How it works</div>
+      <h2>How Givta Works</h2>
+      <p>Four simple steps between you and your first tip.</p>
+    </div>
+    <div class="flow reveal">
+      <div class="flow-step">
+        <div class="flow-icon" style="background:var(--primary-tint);"><span class="flow-badge">1</span>🔗</div>
+        <h3>Create Your Link</h3><p>Sign up and get your unique Givta link in seconds.</p>
+      </div>
+      <div class="flow-connector"></div>
+      <div class="flow-step">
+        <div class="flow-icon" style="background:var(--green-tint);"><span class="flow-badge">2</span>➡️</div>
+        <h3>Share Everywhere</h3><p>Share your link on social media, WhatsApp, bio, and more.</p>
+      </div>
+      <div class="flow-connector"></div>
+      <div class="flow-step">
+        <div class="flow-icon" style="background:#FDECD2;"><span class="flow-badge">3</span>❤️</div>
+        <h3>Receive Tips</h3><p>People tip you with any amount they want to give.</p>
+      </div>
+      <div class="flow-connector"></div>
+      <div class="flow-step">
+        <div class="flow-icon" style="background:var(--primary-tint);"><span class="flow-badge">4</span>👛</div>
+        <h3>Withdraw Earnings</h3><p>Withdraw to your bank account instantly and securely.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="features" class="test band">
+  <div class="inner">
+    <div class="section-head reveal">
+      <div class="eyebrow-line">Loved by creators and communities 💜</div>
+      <h2>Real people, real support</h2>
+    </div>
+    <div class="test-grid reveal">
+      <div class="test-card">
+        <div class="stars">★★★★★</div>
+        <p class="test-quote">"Givta has helped me earn consistently from people who appreciate my content. It's so easy!"</p>
+        <div class="test-person">
+          <div class="ava test-avatar"><img src="https://images.unsplash.com/photo-1617440431587-138ca5c563ec?w=100&h=100&fit=crop&auto=format&q=80" alt=""></div>
+          <div><div class="test-name">Josh Wizzy</div><div class="test-role">YouTuber</div></div>
+        </div>
+      </div>
+      <div class="test-card">
+        <div class="stars">★★★★★</div>
+        <p class="test-quote">"I raised over ₦150k for my project using my Givta link. My supporters love how simple it is."</p>
+        <div class="test-person">
+          <div class="ava test-avatar"><img src="https://images.unsplash.com/photo-1615453262312-022a72d3842a?w=100&h=100&fit=crop&auto=format&q=80" alt=""></div>
+          <div><div class="test-name">Favour A.</div><div class="test-role">Student</div></div>
+        </div>
+      </div>
+      <div class="test-card">
+        <div class="stars">★★★★★</div>
+        <p class="test-quote">"Givta makes it easy for our members and visitors to give offerings anytime, anywhere."</p>
+        <div class="test-person">
+          <div class="ava test-avatar"><img src="https://images.unsplash.com/photo-1602058746409-a4adc6d68270?w=100&h=100&fit=crop&auto=format&q=80" alt=""></div>
+          <div><div class="test-name">RCCG Hope Chapel</div><div class="test-role">Church</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="final-cta band">
+  <div class="final-inner inner">
+    <div class="final-copy">
+      <h2>Ready to receive support?</h2>
+      <p>Join thousands of people getting tipped on Givta.</p>
+      <a href="https://app.givta.com.ng" class="btn btn-white">Create Your Givta Link Free →</a>
+    </div>
+    <div class="final-photo">
+      <img src="https://images.unsplash.com/photo-1602342323893-b11f757957c9?w=900&h=700&fit=crop&auto=format&q=80" alt="A Givta creator smiling">
+    </div>
+  </div>
+</section>
+
+<footer class="band">
+  <div class="inner">
+    <div class="logo-block"><div class="logo-mark">G</div><b>Givta</b></div>
+    <div class="fl">
+      <a href="#how">How it Works</a>
+      <a href="#who">For Whom</a>
+      <a href="#features">Features</a>
+      <a href="#faq">FAQ</a>
+    </div>
+    <p>© 2026 Givta. Tip, share, withdraw.</p>
+  </div>
+</footer>
+
+<script>
+  const items = document.querySelectorAll('.reveal');
+  const io = new IntersectionObserver((entries)=>{
+    entries.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add('show'); io.unobserve(e.target); } });
+  },{threshold:0.12});
+  items.forEach(i=>io.observe(i));
+
+  const tickerData = [
+    {who:'@favour', amt:'+₦450'}, {who:'@kunle', amt:'+₦1,500'}, {who:'@ade', amt:'+₦500'},
+    {who:'@mike', amt:'+₦700'}, {who:'@bimpe', amt:'+₦1,200'}, {who:'@tobi', amt:'+₦300'},
+    {who:'@zainab', amt:'+₦2,000'}, {who:'@chidi', amt:'+₦850'}
+  ];
+  const track = document.getElementById('tickerTrack');
+  let html = '';
+  for(let r=0;r<2;r++){
+    tickerData.forEach(t=>{ html += `<div class="ticker-item">💸 Tip from <b>${t.who}</b> <span class="up">${t.amt}</span></div>`; });
+  }
+  track.innerHTML = html;
+
+  document.querySelectorAll('img').forEach(img=>{
+    img.addEventListener('error', ()=>{ img.style.opacity='0'; }, {once:true});
+  });
+</script>
+
+</body>
+</html>
