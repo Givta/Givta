@@ -53,7 +53,7 @@
         ]
       },
       "associatedDomains": [
-        "applinks:givta.app"
+        "applinks:givta.com.ng"
       ],
       "config": {
         "usesNonExemptEncryption": false
@@ -94,7 +94,7 @@
           "action": "VIEW",
           "data": {
             "scheme": "https",
-            "host": "givta.app",
+            "host": "givta.com.ng",
             "pathPrefix": "/tip"
           },
           "category": [
@@ -106,7 +106,7 @@
           "action": "VIEW",
           "data": {
             "scheme": "https",
-            "host": "givta.app",
+            "host": "givta.com.ng",
             "pathPrefix": "/tip-share"
           },
           "category": [
@@ -118,7 +118,7 @@
           "action": "VIEW",
           "data": {
             "scheme": "https",
-            "host": "givta.app",
+            "host": "givta.com.ng",
             "pathPrefix": "/ref"
           },
           "category": [
@@ -130,7 +130,7 @@
           "action": "VIEW",
           "data": {
             "scheme": "https",
-            "host": "givta.app",
+            "host": "givta.com.ng",
             "pathPrefix": "/challenge"
           },
           "category": [

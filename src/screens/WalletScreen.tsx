@@ -487,7 +487,7 @@ export const WalletScreen: React.FC = () => {
   const generateTippingLink = async () => {
     if (!user?.id) return '';
     const username = user.username || user.email?.split('@')[0] || user.id;
-    return `https://givta.app/tip/${username}`;
+    return `https://givta.com.ng/tip/${username}`;
   };
 
   useEffect(() => {

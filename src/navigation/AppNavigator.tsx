@@ -33,7 +33,7 @@ const Stack = createStackNavigator();
 
 // Configure deep linking prefixes for full app functionality
 const linking = {
-  prefixes: [Linking.createURL('/'), 'givta://', 'https://givta.app', 'https://www.givta.app'],
+  prefixes: [Linking.createURL('/'), 'givta://', 'https://givta.com.ng', 'https://www.givta.com.ng'],
   config: {
     screens: {
       Auth: 'auth',

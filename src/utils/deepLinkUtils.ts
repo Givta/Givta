@@ -2,8 +2,8 @@ import * as Linking from 'expo-linking';
 
 // Base URLs for deep links
 const BASE_URL = 'givta://';
-const WEB_BASE_URL = 'https://givta.app';
-const WEB_BASE_URL_WWW = 'https://www.givta.app';
+const WEB_BASE_URL = 'https://givta.com.ng';
+const WEB_BASE_URL_WWW = 'https://www.givta.com.ng';
 
 /**
  * Generate referral link (deep link)

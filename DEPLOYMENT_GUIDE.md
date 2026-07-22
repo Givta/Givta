@@ -11,7 +11,7 @@ This guide covers the complete deployment process for the Givta social payment a
 - [ ] EAS (Expo Application Services) account
 - [ ] Firebase project
 - [ ] Paystack merchant account
-- [ ] Domain name (givta.app)
+- [ ] Domain name (givta.com.ng)
 
 ### Development Environment
 - [ ] Node.js 18+
@@ -101,8 +101,8 @@ eas build:configure
    - Subtitle: Social Payment & Tipping
    - Description: [Write compelling description]
    - Keywords: payment, tipping, social, money
-   - Support URL: https://givta.app/support
-   - Marketing URL: https://givta.app
+   - Support URL: https://givta.com.ng/support
+   - Marketing URL: https://givta.com.ng
 
 ### 3. Build Production iOS App
 ```bash

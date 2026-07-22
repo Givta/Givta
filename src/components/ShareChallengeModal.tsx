@@ -69,7 +69,7 @@ export const ShareChallengeModal: React.FC<ShareChallengeModalProps> = ({
   onShareSuccess
 }) => {
   // Generate shareable URL if not provided
-  const shareableUrl = propsShareableUrl || `https://givta.app/challenge/${challengeId}`;
+  const shareableUrl = propsShareableUrl || `https://givta.com.ng/challenge/${challengeId}`;
   const [customMessage, setCustomMessage] = useState<string>('');
   const [selectedHashtags, setSelectedHashtags] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState<'quick' | 'custom' | 'preview'>('quick');

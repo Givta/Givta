@@ -159,7 +159,7 @@ export const ReferralScreen: React.FC = () => {
     try {
       const appStoreUrl = 'https://apps.apple.com/app/givta';
       const playStoreUrl = 'https://play.google.com/store/apps/details?id=com.givta.app';
-      const webUrl = `https://givta.app/referral/${referralCode}`;
+      const webUrl = `https://givta.com.ng/referral/${referralCode}`;
 
       const message = `🎁 Join Givta and earn money together!\n\nUse my referral code: ${referralCode}\n\nDownload the app:\n📱 iOS: ${appStoreUrl}\n🤖 Android: ${playStoreUrl}\n🌐 Web: ${webUrl}\n\n#Givta #Referral #EarnMoney`;
 
@@ -260,7 +260,7 @@ export const ReferralScreen: React.FC = () => {
   const generateQRCode = async () => {
     try {
       // Generate QR code data for referral link
-      const referralLink = `https://givta.app/referral/${referralCode}`;
+      const referralLink = `https://givta.com.ng/referral/${referralCode}`;
       setQrCodeData(referralLink);
     } catch (error) {
       console.error('Error generating QR code:', error);
@@ -285,7 +285,7 @@ export const ReferralScreen: React.FC = () => {
   const shareViaPlatform = async (platform: string) => {
     const appStoreUrl = 'https://apps.apple.com/app/givta';
     const playStoreUrl = 'https://play.google.com/store/apps/details?id=com.givta.app';
-    const webUrl = `https://givta.app/referral/${referralCode}`;
+    const webUrl = `https://givta.com.ng/referral/${referralCode}`;
 
     // Givta description and value proposition
     const givtaDescription = `💰 Givta is a revolutionary social payment & tipping app that lets you earn money by sharing, tipping, and referring friends!\n\n✨ Features:\n• Send & receive instant tips\n• Earn from referrals\n• Social payment network\n• Secure & fast transactions\n• Build your income stream\n\n🎯 Join now and start earning!`;
