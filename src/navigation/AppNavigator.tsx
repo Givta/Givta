@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import * as Linking from 'expo-linking';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -36,23 +36,43 @@ const linking = {
   prefixes: [Linking.createURL('/'), 'givta://', 'https://givta.com.ng', 'https://www.givta.com.ng'],
   config: {
     screens: {
-      Auth: 'auth',
+      Login: 'login',
+      Signup: 'signup',
+      ForgotPassword: 'forgot-password',
 
-      // Main app screens
-      MainTabs: 'main',
+      MainTabs: '',
 
-      // Stack screens
       Payment: 'payment',
       EditProfile: 'edit-profile',
       Security: 'security',
       Analytics: 'analytics',
       Notifications: 'notifications',
 
-      // External tipping screens - Fixed naming consistency
-      ExternalTip: 'tip-link/:tipLinkId',
-      PublicTip: 'public-tip/:tipLinkId',
+      ExternalTip: 'tip/:username',
+      PublicTip: 'public-tip/:username',
     },
   },
+};
+
+const WebLandingRedirect: React.FC = () => {
+  useEffect(() => {
+    if (Platform.OS !== 'web' || typeof window === 'undefined') {
+      return;
+    }
+
+    const pathname = window.location.pathname;
+    if (pathname === '/' || pathname === '') {
+      window.location.replace('/givta-landing.html');
+    }
+  }, []);
+
+  return (
+    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff' }}>
+      <Text style={{ fontSize: 18, color: '#4B0082', fontWeight: '600' }}>
+        Opening Givta landing page...
+      </Text>
+    </View>
+  );
 };
 
 const TabNavigator: React.FC = () => {
@@ -247,10 +267,12 @@ export const AppNavigator: React.FC = () => {
     );
   }
 
+  const shouldShowWebLanding = Platform.OS === 'web' && !user && (typeof window === 'undefined' || window.location.pathname === '/' || window.location.pathname === '');
+
   return (
     <SafeAreaProvider>
       <NavigationContainer linking={linking}>
-        {user ? <MainStack /> : <AuthNavigator />}
+        {shouldShowWebLanding ? <WebLandingRedirect /> : user ? <MainStack /> : <AuthNavigator />}
       </NavigationContainer>
     </SafeAreaProvider>
   );

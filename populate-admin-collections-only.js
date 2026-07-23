@@ -5,34 +5,59 @@
  * Adds ONLY the new admin collections without touching existing data
  */
 
-const admin = require('./node_modules/firebase-admin');
-const { Timestamp } = require('./node_modules/firebase-admin/firestore');
+const path = require('path');
+const fs = require('fs');
+const { createRequire } = require('module');
+const backendRoot = path.resolve(__dirname, '..', 'backend');
+const requireFromBackend = createRequire(path.join(backendRoot, 'package.json'));
+const admin = requireFromBackend('firebase-admin');
+const { Timestamp } = requireFromBackend('firebase-admin/firestore');
 
 // Initialize Firebase Admin SDK
-require('dotenv').config();
+require('dotenv').config({ path: path.join(__dirname, '..', 'backend', '.env') });
 
 console.log('🚀 Populating ADMIN COLLECTIONS ONLY...\n');
 
 async function populateAdminCollections() {
   try {
     // Check for service account file
-    const fs = require('fs');
-    const path = require('path');
+    const backendRoot = path.join(__dirname, '..', 'backend');
+    const serviceAccountPath = path.join(backendRoot, 'firebase-service-account.json');
+    const envPath = path.join(backendRoot, '.env');
 
-    const serviceAccountPath = path.join(__dirname, '..', 'Backend', 'firebase-service-account.json');
-    if (!fs.existsSync(serviceAccountPath)) {
-      console.error('❌ Firebase service account file not found!');
-      console.log('Expected location:', serviceAccountPath);
+    let credential;
+    let serviceAccount = null;
+
+    if (process.env.FIREBASE_SERVICE_ACCOUNT_JSON) {
+      try {
+        serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON);
+      } catch (error) {
+        console.error('❌ FIREBASE_SERVICE_ACCOUNT_JSON is not valid JSON:', error.message);
+        process.exit(1);
+      }
+    } else if (fs.existsSync(serviceAccountPath)) {
+      serviceAccount = require(serviceAccountPath);
+    } else if (process.env.GOOGLE_APPLICATION_CREDENTIALS && fs.existsSync(process.env.GOOGLE_APPLICATION_CREDENTIALS)) {
+      credential = admin.credential.applicationDefault();
+    }
+
+    if (!serviceAccount && !credential) {
+      console.error('❌ Firebase credentials not found.');
+      console.log('Provide one of the following:');
+      console.log('• backend/firebase-service-account.json');
+      console.log('• FIREBASE_SERVICE_ACCOUNT_JSON');
+      console.log('• GOOGLE_APPLICATION_CREDENTIALS pointing to a valid credential file');
       process.exit(1);
     }
 
     // Initialize Firebase Admin
     if (!admin.apps.length) {
-      const serviceAccount = require(serviceAccountPath);
+      const projectId = process.env.FIREBASE_PROJECT_ID || process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID || 'givta-94cb8';
+      credential = credential || admin.credential.cert(serviceAccount);
 
       admin.initializeApp({
-        credential: admin.credential.cert(serviceAccount),
-        projectId: process.env.FIREBASE_PROJECT_ID || 'givta-94cb8'
+        credential,
+        projectId
       });
     }
 
