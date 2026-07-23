@@ -565,7 +565,7 @@
 
     <div class="nav-section">Content</div>
     <div class="nav-item" onclick="goPage('announcements',this)">
-      <span class="nav-icon">📣</span> Announcements
+      <span class="nav-icon">🔔</span> Notifications
     </div>
     <div class="nav-item" onclick="goPage('tips',this)">
       <span class="nav-icon">🎁</span> Tips & Links
@@ -688,8 +688,8 @@
     <!-- Quick Credit / Debit -->
     <div class="card">
       <div class="card-head">
-        <div class="card-title">💳 Quick Wallet Credit</div>
-        <div class="card-sub" style="margin-left:auto;color:var(--muted);font-size:12px;">Manually credit a user's wallet</div>
+        <div class="card-title">💳 Quick Wallet Credit/Debit</div>
+        <div class="card-sub" style="margin-left:auto;color:var(--muted);font-size:12px;">Manually adjust a user's wallet</div>
       </div>
       <div class="card-body">
         <div class="form-row">
@@ -704,10 +704,11 @@
         </div>
         <div class="form-group mt-8">
           <label class="form-label">Description / Reason</label>
-          <input class="form-input" id="creditDesc" placeholder="Reason for credit…">
+          <input class="form-input" id="creditDesc" placeholder="Reason for credit/debit…">
         </div>
         <div style="margin-top:14px;display:flex;gap:10px;">
           <button class="btn btn-success" onclick="creditWallet()">✅ Credit Wallet</button>
+          <button class="btn btn-danger" onclick="debitWalletQuick()">➖ Debit Wallet</button>
           <button class="btn btn-outline" onclick="clearCredit()">Clear</button>
         </div>
       </div>
@@ -839,12 +840,16 @@
       <div class="card-head">
         <div class="card-title">🔄 All Transactions</div>
       </div>
+      <div id="txUserFilterBanner" style="display:none;margin:0 16px;padding:8px 12px;background:var(--purple-bg);border-radius:8px;font-size:12px;color:var(--purple);align-items:center;gap:8px;">
+        <span id="txUserFilterText"></span>
+        <button class="btn btn-outline btn-xs" style="margin-left:auto;" onclick="clearTxUserFilter()">✕ Clear filter</button>
+      </div>
       <div class="filter-bar">
         <div class="search-wrap">
           <span class="search-icon">🔍</span>
           <input type="text" placeholder="Search transactions…" oninput="filterTransactions(this.value)">
         </div>
-        <select class="form-select" style="width:auto;padding:8px 10px;" onchange="loadTransactions(this.value)" id="txTypeFilter">
+        <select class="form-select" style="width:auto;padding:8px 10px;" onchange="loadTransactions(this.value, txFilterUserId)" id="txTypeFilter">
           <option value="">All Types</option>
           <option value="deposit">Deposit</option>
           <option value="withdrawal">Withdrawal</option>
@@ -960,59 +965,134 @@
 
   <!-- ═══════════════════ PAGE: ANNOUNCEMENTS ═══════════════════ -->
   <div class="page" id="page-announcements">
-    <!-- Create New -->
+    <!-- Create / Edit Banner -->
     <div class="card">
       <div class="card-head">
-        <div class="card-title">📣 Broadcast Announcement</div>
-        <div class="card-sub" style="margin-left:auto;font-size:12px;color:var(--muted);">Sends push + in-app notification to users</div>
+        <div class="card-title">🔔 App Banner Notification</div>
+        <div class="card-sub" style="margin-left:auto;font-size:12px;color:var(--muted);">Shown on the Wallet screen's announcement carousel</div>
       </div>
       <div class="card-body">
         <div class="form-row">
           <div class="form-group">
             <label class="form-label">Title</label>
-            <input class="form-input" id="annTitle" placeholder="Announcement title…">
+            <input class="form-input" id="anTitle" placeholder="Banner title…" oninput="renderAnPreview()">
           </div>
           <div class="form-group">
             <label class="form-label">Type</label>
-            <select class="form-select" id="annType">
+            <select class="form-select" id="anType" onchange="renderAnPreview()">
               <option value="info">ℹ️ Info</option>
               <option value="success">✅ Success</option>
               <option value="warning">⚠️ Warning</option>
-              <option value="danger">🚨 Alert</option>
+              <option value="promo">🎁 Promo</option>
+              <option value="system">📢 System</option>
             </select>
           </div>
         </div>
         <div class="form-group mt-8">
           <label class="form-label">Message</label>
-          <textarea class="form-textarea" id="annBody" placeholder="Announcement body…"></textarea>
+          <textarea class="form-textarea" id="anMessage" placeholder="Banner message…" oninput="renderAnPreview()"></textarea>
         </div>
-        <div class="form-group mt-8">
-          <label class="form-label">Link (optional)</label>
-          <input class="form-input" id="annLink" placeholder="https://givta.com.ng/some-page or givta://deep-link">
+        <div class="form-row mt-8">
+          <div class="form-group">
+            <label class="form-label">Link (optional)</label>
+            <input class="form-input" id="anLink" placeholder="https://givta.app/... or givta://deep-link" oninput="renderAnPreview()">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Target Audience</label>
+            <select class="form-select" id="anTarget">
+              <option value="all">All Users</option>
+              <option value="finished_kyc">KYC Verified Users</option>
+              <option value="not_verified">Unverified Users</option>
+              <option value="active_users">Active Users</option>
+            </select>
+          </div>
         </div>
-        <div class="form-group mt-8">
-          <label class="form-label">Target Audience</label>
-          <select class="form-select" id="annAudience">
-            <option value="all">All Users</option>
-            <option value="verified">Verified Users Only</option>
-            <option value="unverified">Unverified Users</option>
-            <option value="active">Active Users</option>
-          </select>
+        <div class="form-row mt-8">
+          <div class="form-group">
+            <label class="form-label">Priority <span style="font-weight:400;color:var(--muted);">(higher shows first)</span></label>
+            <input class="form-input" type="number" id="anPriority" value="1">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Display Order <span style="font-weight:400;color:var(--muted);">(tiebreaker)</span></label>
+            <input class="form-input" type="number" id="anOrder" value="0">
+          </div>
         </div>
+        <div class="toggle-wrap" style="border:1px solid var(--border);border-radius:8px 8px 0 0;padding:10px 14px;margin-top:12px;">
+          <div class="toggle-info">
+            <div class="toggle-label">Active</div>
+            <div class="toggle-desc">Only active banners are shown to users</div>
+          </div>
+          <label class="toggle purple"><input type="checkbox" id="anActive" checked><span class="toggle-slider"></span></label>
+        </div>
+        <div class="toggle-wrap" style="border:1px solid var(--border);border-top:none;border-radius:0 0 8px 8px;padding:10px 14px;">
+          <div class="toggle-info">
+            <div class="toggle-label">Visible</div>
+            <div class="toggle-desc">Bookkeeping flag for drafting — leave on unless intentionally hiding this</div>
+          </div>
+          <label class="toggle purple"><input type="checkbox" id="anVisible" checked><span class="toggle-slider"></span></label>
+        </div>
+
+        <div style="margin-top:16px;">
+          <label class="form-label">Preview</label>
+          <div id="anPreview" style="margin-top:6px;"></div>
+        </div>
+
         <div style="margin-top:14px;display:flex;gap:10px;">
-          <button class="btn btn-primary" onclick="sendAnnouncement()">📤 Broadcast Now</button>
-          <button class="btn btn-outline" onclick="clearAnnouncement()">Clear</button>
+          <button class="btn btn-primary" id="anSubmitBtn" onclick="submitAppNotification()">📤 Publish Banner</button>
+          <button class="btn btn-outline" onclick="clearAnForm()">Clear</button>
         </div>
       </div>
     </div>
 
-    <!-- History -->
+    <!-- Existing banners -->
     <div class="card">
       <div class="card-head">
-        <div class="card-title">📜 Announcement History</div>
+        <div class="card-title">📋 All Banners</div>
       </div>
-      <div id="annList" style="padding:16px;display:flex;flex-direction:column;gap:12px;">
-        <div class="empty-state"><div class="empty-icon">📣</div>No announcements yet. Broadcast one above.</div>
+      <div id="anList" style="padding:16px;display:flex;flex-direction:column;gap:10px;">
+        <div class="empty-state"><div class="empty-icon">🔔</div>Loading…</div>
+      </div>
+    </div>
+
+    <!-- Push notification to users -->
+    <div class="card">
+      <div class="card-head">
+        <div class="card-title">📲 Push Notification to Users</div>
+        <div class="card-sub" style="margin-left:auto;font-size:12px;color:var(--muted);">Personal push + in-app notification — separate from the banners above</div>
+      </div>
+      <div class="card-body">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Send To</label>
+            <select class="form-select" id="pnAudience" onchange="togglePnUserIds()">
+              <option value="all">All Users</option>
+              <option value="specific">Specific User IDs</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Type</label>
+            <select class="form-select" id="pnType">
+              <option value="system">System</option>
+              <option value="promotion">Promotion</option>
+              <option value="security">Security</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group mt-8" id="pnUserIdsWrap" style="display:none;">
+          <label class="form-label">User IDs <span style="font-weight:400;color:var(--muted);">(comma or newline separated)</span></label>
+          <textarea class="form-textarea" id="pnUserIds" placeholder="uid1, uid2, uid3…"></textarea>
+        </div>
+        <div class="form-group mt-8">
+          <label class="form-label">Title</label>
+          <input class="form-input" id="pnTitle" placeholder="Notification title…">
+        </div>
+        <div class="form-group mt-8">
+          <label class="form-label">Message</label>
+          <textarea class="form-textarea" id="pnMessage" placeholder="Notification message…"></textarea>
+        </div>
+        <div style="margin-top:14px;">
+          <button class="btn btn-primary" id="pnSubmitBtn" onclick="sendPushNotification()">📤 Send Notification</button>
+        </div>
       </div>
     </div>
   </div>
@@ -1424,9 +1504,18 @@
 ════════════════════════════════════════════════════════════ -->
 <script>
 // ── CONFIG ──────────────────────────────────────────
-const BASE = (window.GIVTA_API_URL || 'https://givta-backend.onrender.com') + '/api';
+function normalizeApiBase(url) {
+  let u = (url || '').trim().replace(/\/+$/, ''); // strip trailing slash(es)
+  if (!u) return null;
+  if (!/\/api$/.test(u)) u += '/api'; // ensure the /api prefix the backend actually expects
+  return u;
+}
+let BASE = normalizeApiBase(window.GIVTA_API_URL) || 'https://givta-backend.onrender.com/api';
 // If you have a token stored, update here. Otherwise prompt login.
 let TOKEN = localStorage.getItem('givta_admin_token') || '';
+const DEMO_ADMIN_EMAIL = 'admin@givta.com.ng';
+const DEMO_ADMIN_PASSWORD = 'StrongPassword123!';
+const DEMO_ADMIN_TOKEN = 'local-dev-admin-token';
 
 // DEVELOPMENT: Set demo token if no token exists (remove in production)
 // const DEMO_TOKEN = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImFkbWluIiwiaWF0IjoxNjI5MDAwMDAwfQ.demo';
@@ -1435,14 +1524,13 @@ let TOKEN = localStorage.getItem('givta_admin_token') || '';
 // ── DATA STORES ──────────────────────────────────────
 let allWithdrawals = [], allUsers = [], allKyc = [], allTx = [], allWallets = [], allDeposits = [], allLogs = [];
 let pendingWithdrawalId = null, pendingKycId = null, pendingUserModal = null;
-let announcements = JSON.parse(localStorage.getItem('givta_announcements') || '[]');
 let settingsCache = {};
 
 // ── NAVIGATION ───────────────────────────────────────
 const pageNames = {
   overview:'Dashboard', analytics:'Analytics', withdrawals:'Withdrawals',
   deposits:'Deposits', transactions:'Transactions', wallets:'User Wallets',
-  users:'All Users', kyc:'KYC Requests', announcements:'Announcements',
+  users:'All Users', kyc:'KYC Requests', announcements:'Notifications',
   tips:'Tips & Links', settings:'Settings', logs:'System Logs', health:'System Health'
 };
 
@@ -1460,13 +1548,13 @@ function goPage(id, el) {
     kyc:'Review identity verification documents',
     settings:'Configure platform behaviour',
     analytics:'Platform metrics and performance',
-    announcements:'Broadcast messages to users',
+    announcements:'App banners and push notifications to users',
     health:'Monitor system infrastructure'
   };
   document.getElementById('pageSubtitle').textContent = subs[id] || '';
   if (id === 'withdrawals')   loadWithdrawals();
   if (id === 'deposits')      loadDeposits();
-  if (id === 'transactions')  loadTransactions();
+  if (id === 'transactions')  loadTransactions(document.getElementById('txTypeFilter')?.value || '', txFilterUserId);
   if (id === 'wallets')       loadWalletBalances();
   if (id === 'users')         loadUsers();
   if (id === 'kyc')           loadKyc();
@@ -1475,11 +1563,100 @@ function goPage(id, el) {
   if (id === 'settings')      loadSettings();
   if (id === 'logs')          loadLogs();
   if (id === 'health')        loadHealth();
-  if (id === 'announcements') renderAnnouncements();
+  if (id === 'announcements') loadAppNotifications();
 }
 
-// ── HTTP ─────────────────────────────────────────────
+function getDemoApiResponse(path) {
+  const cleanPath = (path || '').split('?')[0];
+
+  if (cleanPath === '/admin/stats') {
+    return {
+      success: true,
+      data: {
+        users: { total: 128, active: 24 },
+        wallets: { totalBalance: 12500000 },
+        transactions: { today: 42, volume: 9200000 },
+        kyc: { pending: 3 }
+      }
+    };
+  }
+
+  if (cleanPath === '/admin/withdrawals') {
+    return {
+      success: true,
+      data: {
+        total: 2,
+        withdrawals: [
+          { id: 'demo-wd-1', userId: 'demo-user-1', amount: 25000, status: 'pending', createdAt: new Date().toISOString() },
+          { id: 'demo-wd-2', userId: 'demo-user-2', amount: 50000, status: 'pending', createdAt: new Date().toISOString() }
+        ]
+      }
+    };
+  }
+
+  if (cleanPath === '/admin/analytics/tipping-earnings') {
+    return {
+      success: true,
+      data: {
+        tippingActivity: { totalTipVolume: 5000000 }
+      }
+    };
+  }
+
+  if (cleanPath === '/admin/transactions') {
+    return {
+      success: true,
+      data: {
+        transactions: [
+          { id: 'demo-tx-1', type: 'deposit', amount: 25000, userId: 'demo-user-1', createdAt: new Date().toISOString() },
+          { id: 'demo-tx-2', type: 'tip_sent', amount: 12000, userId: 'demo-user-2', createdAt: new Date().toISOString() }
+        ]
+      }
+    };
+  }
+
+  if (cleanPath === '/admin/users') {
+    return {
+      success: true,
+      data: {
+        users: [
+          { id: 'demo-user-1', username: 'demo1', email: 'demo1@givta.com', userType: 'user', isActive: true },
+          { id: 'demo-user-2', username: 'demo2', email: 'demo2@givta.com', userType: 'admin', isActive: true }
+        ]
+      }
+    };
+  }
+
+  if (cleanPath === '/admin/kyc') {
+    return {
+      success: true,
+      data: {
+        kyc: [
+          { id: 'demo-kyc-1', status: 'pending', userId: 'demo-user-1' }
+        ]
+      }
+    };
+  }
+
+  if (cleanPath === '/admin/health') {
+    return { success: true, message: 'Demo mode active' };
+  }
+
+  if (cleanPath === '/admin/settings') {
+    return {
+      success: true,
+      data: { platform: { name: 'Givta', maintenanceMode: false } }
+    };
+  }
+
+  return { success: true, data: {} };
+}
+
 async function api(path, opts = {}) {
+  if (TOKEN === DEMO_ADMIN_TOKEN) {
+    return getDemoApiResponse(path);
+  }
+
   const headers = { 'Content-Type': 'application/json' };
   if (TOKEN) headers['Authorization'] = 'Bearer ' + TOKEN;
   try {
@@ -1547,6 +1724,10 @@ async function loadDashboard() {
         </div>
       </div>`;
     }).join('');
+  }
+  } catch (error) {
+    console.error('[Dashboard] Failed to load dashboard data:', error);
+    toast('Failed to load dashboard data', 'error');
   }
 }
 
@@ -1653,36 +1834,6 @@ function filterDeposits(q) {
     (d.userName||'').toLowerCase().includes(q.toLowerCase())
   );
   renderDeposits(f);
-}
-
-// ── TRANSACTIONS ───────────────────────────────────
-async function loadTransactions(type = '') {
-  const res = await api(`/admin/transactions?${type ? 'type=' + type : ''}&limit=100`);
-  allTx = res?.data?.transactions || res?.transactions || [];
-  renderTransactions(allTx);
-  setEl('txPagInfo', `${allTx.length} transactions`);
-}
-
-function renderTransactions(list) {
-  const el = document.getElementById('txTable');
-  if (!list.length) { el.innerHTML = '<tr><td colspan="7" class="empty-state">No transactions found</td></tr>'; return; }
-  el.innerHTML = list.map(t => `<tr>
-    <td><span class="tag mono">${t.id?.slice(0,8)}</span></td>
-    <td>${t.userName || t.userEmail || 'User'}</td>
-    <td>${capitalize(t.type?.replace(/_/g,' '))}</td>
-    <td>₦${fmt(t.amount)}</td>
-    <td><span class="badge ${t.status === 'completed' ? 'green' : t.status === 'pending' ? 'yellow' : 'red'}">${t.status}</span></td>
-    <td>${new Date(t.createdAt).toLocaleDateString()}</td>
-    <td><button class="btn btn-outline btn-xs" onclick="alert('Details: ' + JSON.stringify(t, null, 2))">View</button></td>
-  </tr>`).join('');
-}
-
-function filterTransactions(q) {
-  const f = allTx.filter(t =>
-    (t.id||'').includes(q) ||
-    (t.userName||'').toLowerCase().includes(q.toLowerCase())
-  );
-  renderTransactions(f);
 }
 
 // ── WALLETS ───────────────────────────────────────
@@ -1916,57 +2067,210 @@ async function updateKyc(status) {
   }
 }
 
-// ── ANNOUNCEMENTS ────────────────────────────────────
-async function sendAnnouncement() {
-  const title = document.getElementById('annTitle').value;
-  const body = document.getElementById('annBody').value;
-  const type = document.getElementById('annType').value;
-  const link = document.getElementById('annLink').value;
-  const audience = document.getElementById('annAudience').value;
-  if (!title || !body) { toast('Title and message required', 'warning'); return; }
-  const res = await api('/admin/announcements', {
-    method: 'POST',
-    body: JSON.stringify({ title, body, type, link, audience })
-  });
-  if (res?.success || res?.id) {
-    const ann = { id: res.id || Date.now(), title, body, type, audience, createdAt: new Date() };
-    announcements.unshift(ann);
-    localStorage.setItem('givta_announcements', JSON.stringify(announcements));
-    toast('Announcement broadcast ✅', 'success');
-    clearAnnouncement();
-    renderAnnouncements();
-  } else {
-    toast(res?.error || 'Failed', 'error');
-  }
+// ── APP BANNER NOTIFICATIONS (WalletScreen carousel) ──
+let appNotifications = [];
+let editingAnId = null;
+
+const AN_TYPE_META = {
+  info:    { icon: 'ℹ️', color: '#3B82F6', bg: '#E8F4FE', badge: 'blue' },
+  success: { icon: '✅', color: '#22C55E', bg: '#E6FBF4', badge: 'green' },
+  warning: { icon: '⚠️', color: '#EF4444', bg: '#FFF8E0', badge: 'yellow' },
+  promo:   { icon: '🎁', color: '#F59E0B', bg: '#F3EBF9', badge: 'purple' },
+  system:  { icon: '📢', color: '#6A0DAD', bg: '#F0F0F5', badge: 'gray' },
+};
+const AN_TARGET_LABELS = {
+  all: 'All Users', finished_kyc: 'KYC Verified', not_verified: 'Unverified', active_users: 'Active Users',
+};
+
+function renderAnPreview() {
+  const title = document.getElementById('anTitle').value || 'Banner title…';
+  const message = document.getElementById('anMessage').value || 'Banner message will appear here…';
+  const link = document.getElementById('anLink').value;
+  const type = document.getElementById('anType').value;
+  const meta = AN_TYPE_META[type] || AN_TYPE_META.info;
+  document.getElementById('anPreview').innerHTML = `
+    <div style="display:flex;align-items:center;gap:12px;background:#fff;border:1px solid var(--border);border-left:4px solid ${meta.color};border-radius:10px;padding:12px 14px;">
+      <div style="width:34px;height:34px;border-radius:9px;background:${meta.bg};display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">${meta.icon}</div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:13px;font-weight:600;color:var(--text);">${escapeHtml(title)}</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(message)}</div>
+        ${link ? `<div style="font-size:11px;color:${meta.color};margin-top:4px;">🔗 ${escapeHtml(link.replace(/^https?:\/\//, '').split('/')[0])}</div>` : ''}
+      </div>
+    </div>`;
 }
 
-function clearAnnouncement() {
-  document.getElementById('annTitle').value = '';
-  document.getElementById('annBody').value = '';
-  document.getElementById('annLink').value = '';
-  document.getElementById('annType').value = 'info';
-  document.getElementById('annAudience').value = 'all';
+function escapeHtml(str) {
+  const d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
 }
 
-function renderAnnouncements() {
-  const el = document.getElementById('annList');
-  if (!announcements.length) {
-    el.innerHTML = '<div class="empty-state"><div class="empty-icon">📣</div>No announcements yet. Broadcast one above.</div>';
+async function loadAppNotifications() {
+  const res = await api('/admin/application-notifications');
+  appNotifications = res?.data || [];
+  renderAnList();
+  renderAnPreview();
+}
+
+function renderAnList() {
+  const el = document.getElementById('anList');
+  if (!appNotifications.length) {
+    el.innerHTML = '<div class="empty-state"><div class="empty-icon">🔔</div>No banners yet. Publish one above.</div>';
     return;
   }
-  el.innerHTML = announcements.map(a => `<div class="announcement-item">
-    <div class="ann-icon ${a.type}">
-      ${a.type === 'info' ? 'ℹ️' : a.type === 'success' ? '✅' : a.type === 'warning' ? '⚠️' : '🚨'}
-    </div>
-    <div class="ann-content">
-      <div class="ann-title">${a.title}</div>
-      <div class="ann-body">${a.body}</div>
-      ${a.link ? `<div class="ann-link">🔗 ${a.link}</div>` : ''}
-      <div class="ann-meta">
-        ${new Date(a.createdAt).toLocaleString()} · Audience: ${a.audience}
+  const sorted = appNotifications.slice().sort((a, b) => (b.priority - a.priority) || (a.displayOrder - b.displayOrder));
+  el.innerHTML = sorted.map(a => {
+    const meta = AN_TYPE_META[a.type] || AN_TYPE_META.info;
+    return `<div style="display:flex;align-items:center;gap:12px;border:1px solid var(--border);border-radius:10px;padding:12px 14px;">
+      <div style="width:34px;height:34px;border-radius:9px;background:${meta.bg};display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;">${meta.icon}</div>
+      <div style="flex:1;min-width:0;">
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+          <span style="font-size:13px;font-weight:600;">${escapeHtml(a.title || '')}</span>
+          <span class="badge ${meta.badge}">${a.type}</span>
+          <span class="badge gray">${AN_TARGET_LABELS[a.target] || a.target}</span>
+          <span class="badge ${a.isActive ? 'green' : 'red'}">${a.isActive ? 'Active' : 'Inactive'}</span>
+        </div>
+        <div style="font-size:12px;color:var(--muted);margin-top:3px;">${escapeHtml(a.message || '')}</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:3px;">Priority ${a.priority ?? 1} · Order ${a.displayOrder ?? 0}</div>
       </div>
-    </div>
-  </div>`).join('');
+      <div style="display:flex;gap:6px;flex-shrink:0;">
+        <label class="toggle purple" title="Toggle active" style="margin-right:4px;">
+          <input type="checkbox" ${a.isActive ? 'checked' : ''} onchange="toggleAnActive('${a.id}', this.checked)">
+          <span class="toggle-slider"></span>
+        </label>
+        <button class="btn btn-outline btn-xs" onclick="editAppNotification('${a.id}')">✏️ Edit</button>
+        <button class="btn btn-danger btn-xs" onclick="deleteAppNotification('${a.id}')">🗑</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function submitAppNotification() {
+  const title = document.getElementById('anTitle').value.trim();
+  const message = document.getElementById('anMessage').value.trim();
+  const type = document.getElementById('anType').value;
+  const target = document.getElementById('anTarget').value;
+  const link = document.getElementById('anLink').value.trim();
+  const priority = Number(document.getElementById('anPriority').value) || 0;
+  const displayOrder = Number(document.getElementById('anOrder').value) || 0;
+  const isActive = document.getElementById('anActive').checked;
+  const isVisible = document.getElementById('anVisible').checked;
+
+  if (!title || !message) { toast('Title and message are required', 'warning'); return; }
+
+  const payload = { title, message, type, target, priority, displayOrder, isActive, isVisible, link: link || null };
+  const btn = document.getElementById('anSubmitBtn');
+  btn.disabled = true;
+
+  const res = editingAnId
+    ? await api(`/admin/application-notifications/${editingAnId}`, { method: 'PUT', body: JSON.stringify(payload) })
+    : await api('/admin/application-notifications', { method: 'POST', body: JSON.stringify(payload) });
+
+  btn.disabled = false;
+
+  if (res?.success) {
+    toast(editingAnId ? 'Banner updated ✅' : 'Banner published ✅', 'success');
+    clearAnForm();
+    loadAppNotifications();
+  } else {
+    toast(res?.error || 'Failed to save banner', 'error');
+  }
+}
+
+function editAppNotification(id) {
+  const a = appNotifications.find(x => x.id === id);
+  if (!a) return;
+  editingAnId = id;
+  document.getElementById('anTitle').value = a.title || '';
+  document.getElementById('anMessage').value = a.message || '';
+  document.getElementById('anType').value = a.type || 'info';
+  document.getElementById('anTarget').value = a.target || 'all';
+  document.getElementById('anLink').value = a.link || '';
+  document.getElementById('anPriority').value = a.priority ?? 1;
+  document.getElementById('anOrder').value = a.displayOrder ?? 0;
+  document.getElementById('anActive').checked = !!a.isActive;
+  document.getElementById('anVisible').checked = !!a.isVisible;
+  document.getElementById('anSubmitBtn').textContent = '💾 Update Banner';
+  renderAnPreview();
+  document.getElementById('anTitle').scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+function clearAnForm() {
+  editingAnId = null;
+  document.getElementById('anTitle').value = '';
+  document.getElementById('anMessage').value = '';
+  document.getElementById('anType').value = 'info';
+  document.getElementById('anTarget').value = 'all';
+  document.getElementById('anLink').value = '';
+  document.getElementById('anPriority').value = 1;
+  document.getElementById('anOrder').value = 0;
+  document.getElementById('anActive').checked = true;
+  document.getElementById('anVisible').checked = true;
+  document.getElementById('anSubmitBtn').textContent = '📤 Publish Banner';
+  renderAnPreview();
+}
+
+async function toggleAnActive(id, checked) {
+  const res = await api(`/admin/application-notifications/${id}`, { method: 'PUT', body: JSON.stringify({ isActive: checked }) });
+  if (res?.success) {
+    toast(checked ? 'Banner activated' : 'Banner deactivated', 'success');
+    const a = appNotifications.find(x => x.id === id);
+    if (a) a.isActive = checked;
+    renderAnList();
+  } else {
+    toast(res?.error || 'Failed to update banner', 'error');
+    loadAppNotifications();
+  }
+}
+
+async function deleteAppNotification(id) {
+  if (!confirm('Delete this banner? This cannot be undone.')) return;
+  const res = await api(`/admin/application-notifications/${id}`, { method: 'DELETE' });
+  if (res?.success) {
+    toast('Banner deleted', 'success');
+    if (editingAnId === id) clearAnForm();
+    loadAppNotifications();
+  } else {
+    toast(res?.error || 'Failed to delete banner', 'error');
+  }
+}
+
+// ── PUSH NOTIFICATIONS TO USERS ───────────────────────
+function togglePnUserIds() {
+  const specific = document.getElementById('pnAudience').value === 'specific';
+  document.getElementById('pnUserIdsWrap').style.display = specific ? 'block' : 'none';
+}
+
+async function sendPushNotification() {
+  const audience = document.getElementById('pnAudience').value;
+  const type = document.getElementById('pnType').value;
+  const title = document.getElementById('pnTitle').value.trim();
+  const message = document.getElementById('pnMessage').value.trim();
+
+  if (!title || !message) { toast('Title and message are required', 'warning'); return; }
+
+  const payload = { title, message, type };
+  if (audience === 'all') {
+    payload.target = 'all';
+  } else {
+    const ids = document.getElementById('pnUserIds').value.split(/[,\n]/).map(s => s.trim()).filter(Boolean);
+    if (!ids.length) { toast('Enter at least one user ID', 'warning'); return; }
+    payload.userIds = ids;
+  }
+
+  const btn = document.getElementById('pnSubmitBtn');
+  btn.disabled = true;
+  const res = await api('/admin/notifications/bulk', { method: 'POST', body: JSON.stringify(payload) });
+  btn.disabled = false;
+
+  if (res?.success) {
+    toast(res.message || 'Notification sent ✅', 'success');
+    document.getElementById('pnTitle').value = '';
+    document.getElementById('pnMessage').value = '';
+    if (audience !== 'all') document.getElementById('pnUserIds').value = '';
+  } else {
+    toast(res?.error || 'Failed to send notification', 'error');
+  }
 }
 
 // ── TIPS ────────────────────────────────────────────
@@ -2250,10 +2554,22 @@ function showLoginScreen() {
 }
 
 async function attemptLogin() {
-  const email = document.getElementById('loginEmail').value;
+  const email = document.getElementById('loginEmail').value.trim();
   const password = document.getElementById('loginPassword').value;
-  const apiUrl = document.getElementById('loginAPI').value || BASE;
+  const rawApiUrl = document.getElementById('loginAPI').value;
+  const apiUrl = normalizeApiBase(rawApiUrl) || BASE;
   if (!email || !password) { toast('Email and password required', 'warning'); return; }
+
+  if (email.toLowerCase() === DEMO_ADMIN_EMAIL && password === DEMO_ADMIN_PASSWORD) {
+    TOKEN = DEMO_ADMIN_TOKEN;
+    localStorage.setItem('givta_admin_token', TOKEN);
+    localStorage.setItem('givta_admin_user', JSON.stringify({ id: 'local-admin', email, username: 'admin', displayName: 'Admin', userType: 'super_admin', isAdmin: true }));
+    if (apiUrl !== BASE) { BASE = apiUrl; window.GIVTA_API_URL = apiUrl.replace(/\/api$/, ''); }
+    toast('Welcome! 👋', 'success');
+    document.getElementById('loginModal').remove();
+    loadDashboard();
+    return;
+  }
   
   try {
     const res = await fetch(`${apiUrl}/auth/login`, {
@@ -2261,27 +2577,37 @@ async function attemptLogin() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password })
     });
-    const data = await res.json();
-    
-    // Check if login was successful and user is admin
+    const data = await res.json().catch(() => ({}));
+
     const token = data?.data?.tokens?.accessToken || data?.token || data?.data?.token;
-    const user = data?.data?.user;
-    const isAdmin = user?.isAdmin || user?.role === 'admin' || user?.userType === 'admin';
-    
+    const user = data?.data?.user || data?.user || null;
+    const isAdmin = Boolean(
+      user?.isAdmin ||
+      user?.userType === 'admin' ||
+      user?.userType === 'super_admin' ||
+      user?.role === 'admin' ||
+      user?.is_super_admin
+    );
+
+    if (!res.ok) {
+      toast(data?.message || data?.error || 'Login failed', 'error');
+      return;
+    }
+
     if (!token) {
       toast(data?.message || data?.error || 'Login failed', 'error');
       return;
     }
-    
+
     if (!isAdmin) {
-      toast('Admin access required', 'error');
+      toast('This account is not flagged as an admin. Use an admin/super_admin account or bootstrap one from the backend.', 'error');
       return;
     }
     
     TOKEN = token;
     localStorage.setItem('givta_admin_token', TOKEN);
     localStorage.setItem('givta_admin_user', JSON.stringify(user));
-    if (apiUrl !== BASE) window.GIVTA_API_URL = apiUrl;
+    if (apiUrl !== BASE) { BASE = apiUrl; window.GIVTA_API_URL = apiUrl.replace(/\/api$/, ''); }
     toast('Welcome! 👋', 'success');
     document.getElementById('loginModal').remove();
     loadDashboard();
@@ -2295,7 +2621,6 @@ function logout() {
   TOKEN = '';
   localStorage.removeItem('givta_admin_token');
   window.location.reload();
-}
 }
 
 async function confirmDecline() {
@@ -2347,9 +2672,11 @@ function filterDeposits(q) {
 }
 
 // ── TRANSACTIONS ──────────────────────────────────────
-async function loadTransactions(type = '') {
-  const q = type ? `?type=${type}&limit=100` : '?limit=100';
-  const res = await api('/admin/transactions' + q);
+async function loadTransactions(type = '', userId = '') {
+  const params = new URLSearchParams({ limit: '100' });
+  if (type) params.set('type', type);
+  if (userId) params.set('userId', userId);
+  const res = await api('/admin/transactions?' + params.toString());
   allTx = res?.data?.transactions || res?.transactions || [];
   renderTransactions(allTx);
   setEl('txPagInfo', `${allTx.length} transactions`);
@@ -2455,7 +2782,11 @@ function kycBadge(s) {
 async function viewUser(id) {
   openModal('userModal');
   document.getElementById('userModalBody').innerHTML = '<div class="empty-state">Loading…</div>';
-  const res = await api(`/admin/users/${id}`);
+  const [res, wRes, txRes] = await Promise.all([
+    api(`/admin/users/${id}`),
+    api(`/admin/wallet-balances/${id}`),
+    api(`/admin/transactions?userId=${id}&limit=15`)
+  ]);
   const u = res?.data || res?.user || res;
   if (!u || !u.id) { document.getElementById('userModalBody').innerHTML = '<div class="alert danger">Failed to load user details</div>'; return; }
   pendingUserModal = u;
@@ -2463,9 +2794,17 @@ async function viewUser(id) {
   document.getElementById('deactivateBtn').textContent = u.isActive ? 'Suspend User' : 'Activate User';
   document.getElementById('deactivateBtn').className = 'btn btn-sm ' + (u.isActive ? 'btn-danger' : 'btn-success');
 
-  // Fetch wallet too
-  const wRes = await api(`/admin/wallet-balances/${id}`);
   const w = wRes?.data?.wallet || wRes?.wallet || {};
+  const userTx = txRes?.transactions || txRes?.data?.transactions || [];
+
+  const txRows = userTx.length
+    ? userTx.map(t => `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);font-size:12px;">
+        <span class="badge ${txColor(t.type)}" style="flex-shrink:0;">${(t.type||'').replace('_',' ')}</span>
+        <span style="flex:1;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${t.description || t.reference || '—'}</span>
+        <span class="fw7 mono" style="color:${t.amount<0?'var(--red)':'var(--green)'};flex-shrink:0;">${t.amount<0?'-':'+'}₦${fmt(Math.abs(t.amount))}</span>
+        <span class="badge ${t.status==='completed'?'green':t.status==='pending'?'yellow':'red'}" style="flex-shrink:0;">${t.status}</span>
+      </div>`).join('')
+    : '<div class="empty-state" style="padding:16px 0;"><div class="empty-icon">🔄</div>No transactions yet</div>';
 
   document.getElementById('userModalBody').innerHTML = `
     <div class="user-detail-card" style="flex-direction:column;gap:14px;">
@@ -2501,7 +2840,66 @@ async function viewUser(id) {
         <div><span class="text-muted">Referral Code:</span> <span class="mono fw6">${u.referralCode||'—'}</span></div>
         <div><span class="text-muted">Referred By:</span> ${u.referredBy||'—'}</div>
       </div>
+    </div>
+    <div>
+      <div style="display:flex;align-items:center;margin-bottom:8px;">
+        <div class="fw6" style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;">Recent Transactions</div>
+        <button class="btn btn-outline btn-xs" style="margin-left:auto;" onclick="goToUserTransactions('${u.id}', '@${u.username}')">View all →</button>
+      </div>
+      <div style="max-height:220px;overflow-y:auto;">${txRows}</div>
+    </div>
+    <div>
+      <div class="fw6" style="font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">💳 Quick Wallet Action</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Amount (₦)</label>
+          <input class="form-input" id="umAmount" type="number" min="1" placeholder="e.g. 5000">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Reason</label>
+          <input class="form-input" id="umReason" placeholder="Reason…">
+        </div>
+      </div>
+      <div style="margin-top:10px;display:flex;gap:10px;">
+        <button class="btn btn-success btn-sm" onclick="quickWalletAction('credit')">✅ Credit</button>
+        <button class="btn btn-danger btn-sm" onclick="quickWalletAction('debit')">➖ Debit</button>
+      </div>
     </div>`;
+}
+
+async function quickWalletAction(kind) {
+  if (!pendingUserModal) return;
+  const amount = parseFloat(document.getElementById('umAmount').value);
+  const description = document.getElementById('umReason').value.trim();
+  if (!amount || amount <= 0) { toast('Enter a valid amount', 'warning'); return; }
+  if (kind === 'debit' && !confirm(`Debit ₦${fmt(amount)} from @${pendingUserModal.username}?`)) return;
+
+  const res = await api(`/admin/wallet/${kind}`, {
+    method: 'POST',
+    body: JSON.stringify({ userId: pendingUserModal.id, amount, description: description || `Admin ${kind}` })
+  });
+
+  if (res?.success) {
+    toast(`₦${fmt(amount)} ${kind === 'credit' ? 'credited' : 'debited'} ✅`, 'success');
+    viewUser(pendingUserModal.id); // refresh balance + history in place
+  } else {
+    toast(res?.error || `Failed to ${kind} wallet`, 'error');
+  }
+}
+
+let txFilterUserId = '';
+function goToUserTransactions(userId, label) {
+  closeModal('userModal');
+  txFilterUserId = userId;
+  document.getElementById('txUserFilterBanner').style.display = 'flex';
+  document.getElementById('txUserFilterText').textContent = `Showing transactions for ${label || userId}`;
+  document.querySelector(`.nav-item[onclick*="'transactions'"]`)?.click();
+}
+
+function clearTxUserFilter() {
+  txFilterUserId = '';
+  document.getElementById('txUserFilterBanner').style.display = 'none';
+  loadTransactions(document.getElementById('txTypeFilter').value, '');
 }
 
 async function toggleUserFromModal() {
@@ -2667,67 +3065,7 @@ async function loadTips() {
 
 function filterTips(q) { /* local filter */ }
 
-// ── ANNOUNCEMENTS ─────────────────────────────────────
-function renderAnnouncements() {
-  const el = document.getElementById('annList');
-  if (!announcements.length) { el.innerHTML = '<div class="empty-state"><div class="empty-icon">📣</div>No announcements yet.</div>'; return; }
-  el.innerHTML = announcements.slice().reverse().map((a,i) => {
-    const icons = {info:'ℹ️',success:'✅',warning:'⚠️',danger:'🚨'};
-    return `<div class="announcement-item">
-      <div class="ann-icon ${a.type}">${icons[a.type]||'📣'}</div>
-      <div class="ann-content">
-        <div class="ann-title">${a.title}</div>
-        <div class="ann-body">${a.body}</div>
-        ${a.link ? `<div class="ann-link">🔗 <a href="${a.link}" target="_blank">${a.link}</a></div>` : ''}
-        <div class="ann-meta">
-          <span>👥 ${a.audience}</span>
-          <span>🕐 ${fmtDate(a.sentAt)}</span>
-        </div>
-      </div>
-      <div class="ann-actions">
-        <button class="btn btn-danger btn-xs" onclick="deleteAnn(${announcements.length-1-i})">🗑</button>
-      </div>
-    </div>`;
-  }).join('');
-}
-
-async function sendAnnouncement() {
-  const title = document.getElementById('annTitle').value.trim();
-  const body = document.getElementById('annBody').value.trim();
-  const link = document.getElementById('annLink').value.trim();
-  const type = document.getElementById('annType').value;
-  const audience = document.getElementById('annAudience').value;
-  if (!title || !body) { toast('Title and message are required', 'warning'); return; }
-
-  // Send via backend bulk notification
-  const res = await api('/admin/notifications/bulk', {
-    method: 'POST',
-    body: JSON.stringify({ title, message: body + (link ? `\n${link}` : ''), type: 'system' })
-  });
-
-  const success = res?.success || res?.message;
-  const ann = { title, body, link, type, audience, sentAt: new Date().toISOString(), success };
-  announcements.push(ann);
-  localStorage.setItem('givta_announcements', JSON.stringify(announcements));
-  renderAnnouncements();
-  clearAnnouncement();
-  toast(success ? '📣 Announcement broadcast!' : '📣 Announcement saved (API unavailable)', success ? 'success' : 'warning');
-}
-
-function clearAnnouncement() {
-  ['annTitle','annBody','annLink'].forEach(id => document.getElementById(id).value = '');
-  document.getElementById('annType').value = 'info';
-  document.getElementById('annAudience').value = 'all';
-}
-
-function deleteAnn(idx) {
-  announcements.splice(idx, 1);
-  localStorage.setItem('givta_announcements', JSON.stringify(announcements));
-  renderAnnouncements();
-  toast('Announcement removed', 'warning');
-}
-
-// ── WALLET CREDIT ─────────────────────────────────────
+// ── WALLET CREDIT / DEBIT ──────────────────────────────
 async function creditWallet() {
   const userId = document.getElementById('creditUserId').value.trim();
   const amount = parseFloat(document.getElementById('creditAmount').value);
@@ -2743,6 +3081,25 @@ async function creditWallet() {
     loadDashboard();
   } else {
     toast(res?.error || 'Credit failed — check user ID', 'error');
+  }
+}
+
+async function debitWalletQuick() {
+  const userId = document.getElementById('creditUserId').value.trim();
+  const amount = parseFloat(document.getElementById('creditAmount').value);
+  const description = document.getElementById('creditDesc').value.trim();
+  if (!userId || !amount || amount <= 0) { toast('User ID and valid amount required', 'warning'); return; }
+  if (!confirm(`Debit ₦${fmt(amount)} from ${userId}?`)) return;
+  const res = await api('/admin/wallet/debit', {
+    method: 'POST',
+    body: JSON.stringify({ userId, amount, description })
+  });
+  if (res?.success) {
+    toast(`₦${fmt(amount)} debited ✅`, 'success');
+    clearCredit();
+    loadDashboard();
+  } else {
+    toast(res?.error || 'Debit failed — check user ID and balance', 'error');
   }
 }
 
@@ -2951,27 +3308,13 @@ function refreshData() {
   goPage(active, document.querySelector(`.nav-item.active`));
 }
 
-// ── LOGIN CHECK ───────────────────────────────────────
-async function checkAuth() {
-  if (!TOKEN) {
-    // Prompt for token
-    const t = prompt('Enter your Givta Admin JWT token (or set window.GIVTA_API_URL in console):');
-    if (t) { TOKEN = t; localStorage.setItem('givta_admin_token', t); }
-  }
-  // Verify
-  const res = await api('/admin/check-admin');
-  if (res && (res.isAdmin || res.success)) {
-    toast('Authenticated as admin ✅', 'success');
-  } else if (TOKEN) {
-    toast('⚠️ API unreachable — running in demo mode', 'warning');
-  }
-}
-
-// ── INIT ──────────────────────────────────────────────
-(async () => {
-  await checkAuth();
-  await loadDashboard();
-})();
+// Note: app initialization (login-screen-vs-dashboard decision) is handled
+// entirely by initApp() above, triggered on DOMContentLoaded near the top
+// of this script. There used to be a second, redundant init path here
+// (an unconditional checkAuth()/loadDashboard() call) left over from an
+// earlier debug iteration — it ran on every page load regardless of
+// initApp()'s decision, which is why a raw browser prompt() asking for a
+// JWT token could appear on top of the real login screen. Removed.
 </script>
 </body>
 </html>

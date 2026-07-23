@@ -54,27 +54,6 @@ const linking = {
   },
 };
 
-const WebLandingRedirect: React.FC = () => {
-  useEffect(() => {
-    if (Platform.OS !== 'web' || typeof window === 'undefined') {
-      return;
-    }
-
-    const pathname = window.location.pathname;
-    if (pathname === '/' || pathname === '') {
-      window.location.replace('/givta-landing.html');
-    }
-  }, []);
-
-  return (
-    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff' }}>
-      <Text style={{ fontSize: 18, color: '#4B0082', fontWeight: '600' }}>
-        Opening Givta landing page...
-      </Text>
-    </View>
-  );
-};
-
 const TabNavigator: React.FC = () => {
   const insets = useSafeAreaInsets();
 
@@ -267,12 +246,10 @@ export const AppNavigator: React.FC = () => {
     );
   }
 
-  const shouldShowWebLanding = Platform.OS === 'web' && !user && (typeof window === 'undefined' || window.location.pathname === '/' || window.location.pathname === '');
-
   return (
     <SafeAreaProvider>
       <NavigationContainer linking={linking}>
-        {shouldShowWebLanding ? <WebLandingRedirect /> : user ? <MainStack /> : <AuthNavigator />}
+        {user ? <MainStack /> : <AuthNavigator />}
       </NavigationContainer>
     </SafeAreaProvider>
   );
