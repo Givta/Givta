@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import * as Linking from 'expo-linking';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -52,27 +52,6 @@ const linking = {
       PublicTip: 'public-tip/:username',
     },
   },
-};
-
-const WebLandingRedirect: React.FC = () => {
-  useEffect(() => {
-    if (Platform.OS !== 'web' || typeof window === 'undefined') {
-      return;
-    }
-
-    const pathname = window.location.pathname;
-    if (pathname === '/' || pathname === '') {
-      window.location.replace('/givta-landing.html');
-    }
-  }, []);
-
-  return (
-    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff' }}>
-      <Text style={{ fontSize: 18, color: '#4B0082', fontWeight: '600' }}>
-        Opening Givta landing page...
-      </Text>
-    </View>
-  );
 };
 
 const TabNavigator: React.FC = () => {
@@ -267,12 +246,10 @@ export const AppNavigator: React.FC = () => {
     );
   }
 
-  const shouldShowWebLanding = Platform.OS === 'web' && !user && (typeof window === 'undefined' || window.location.pathname === '/' || window.location.pathname === '');
-
   return (
     <SafeAreaProvider>
       <NavigationContainer linking={linking}>
-        {shouldShowWebLanding ? <WebLandingRedirect /> : user ? <MainStack /> : <AuthNavigator />}
+        {user ? <MainStack /> : <AuthNavigator />}
       </NavigationContainer>
     </SafeAreaProvider>
   );
