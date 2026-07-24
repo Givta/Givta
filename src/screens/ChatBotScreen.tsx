@@ -397,7 +397,7 @@ export const ChatBotScreen: React.FC = () => {
       case 'tip_fees':
         const feeMessage: Message = {
           id: Date.now().toString(),
-          text: 'About tipping fees:\n\n• Platform fee: 5% of tip amount\n• Example: ₦100 tip = ₦5 fee, total ₦105\n• Fees help maintain the platform\n• All fees are transparently displayed before sending',
+          text: 'About tipping fees:\n\n• Platform fee: 5% of tip amount\n• Example: ₦100 tip = ₦5 fee, recipient receives ₦95\n• The total deducted from your wallet is ₦100\n• All fees are transparently displayed before sending',
           isUser: false,
           timestamp: new Date(),
         };

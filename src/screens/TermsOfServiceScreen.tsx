@@ -63,7 +63,7 @@ export const TermsOfServiceScreen: React.FC = () => {
           <Text style={styles.sectionTitle}>5. Fees and Payments</Text>
           <Text style={styles.paragraph}>
             • Transaction Fees: Standard fees apply to money transfers (₦50 for transfers under ₦5,000, ₦100 for transfers ₦5,000-₦50,000), withdrawals (2.3% of withdrawal amount), and other services{'\n'}
-            • Tip Fees: Tips sent through the platform incur a 2% processing fee. Tip link creators receive the full amount, and the fee is deducted from the tipper{'\n'}
+              • Tip Fees: Tips sent through the platform incur a 5% processing fee. Recipients receive 95% of the tip amount, and the fee is deducted from the tipper{'\n'}
             • Deposit Fees: Bank transfers are free; card deposits may incur Paystack processing fees{'\n'}
             • Refund Policy: Transaction fees are non-refundable. Transaction reversals are only possible in cases of system errors or fraud, subject to our investigation{'\n'}
             • Fee Changes: We will notify all users via in-app notifications, email, and SMS at least 30 days before implementing fee changes{'\n'}

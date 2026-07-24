@@ -318,7 +318,7 @@ export const WalletProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   // Auto-refresh logic
   const [isOnline, setIsOnline] = useState(navigator?.onLine ?? true);
   const [appState, setAppState] = useState(AppState.currentState);
-  const refreshTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const refreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const hasErrorRef = useRef(false);
   const consecutiveErrorsRef = useRef(0);
 

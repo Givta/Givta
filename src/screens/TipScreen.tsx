@@ -98,7 +98,7 @@ const ConfirmModal: React.FC<{
           {/* Breakdown rows */}
           <View style={ms.confirmBreakdown}>
             <View style={ms.confirmRow}>
-              <Text style={ms.confirmRowLabel}>Platform fee (2%)</Text>
+              <Text style={ms.confirmRowLabel}>Platform fee (5%)</Text>
               <Text style={ms.confirmRowValue}>{formatCurrency(payload.platformFee)}</Text>
             </View>
             <View style={ms.confirmDivider} />
@@ -302,8 +302,8 @@ export const TipScreen: React.FC = () => {
   const [successPayload, setSuccessPayload]         = useState({ name: '', tip: 0, fee: 0 });
 
   const tipAmount   = parseFloat(amount) || 0;
-  const platformFee = tipAmount * 0.02;
-  const totalAmount = tipAmount + platformFee;
+  const platformFee = tipAmount * 0.05;
+  const totalAmount = tipAmount;
   const hasAmount   = tipAmount > 0;
   const canSend     =
     recipientValidated &&
@@ -603,7 +603,7 @@ export const TipScreen: React.FC = () => {
                 <Text style={s.feeValue}>{formatCurrency(tipAmount)}</Text>
               </View>
               <View style={s.feeRow}>
-                <Text style={s.feeLabel}>Platform fee (2%)</Text>
+                <Text style={s.feeLabel}>Platform fee (5%)</Text>
                 <Text style={s.feeValue}>{formatCurrency(platformFee)}</Text>
               </View>
               <View style={s.feeDivider} />

@@ -244,7 +244,7 @@ const SignupScreen: React.FC<any> = ({ navigation }) => {
   const [loading, setLoading] = useState(false);
   const [usernameAvailable, setUsernameAvailable] = useState<boolean | null>(null);
   const [checkingUsername, setCheckingUsername] = useState(false);
-  const usernameTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const usernameTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Check username availability via API
   const checkUsernameAvailability = async (usernameToCheck: string) => {
