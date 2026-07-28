@@ -1,71 +1,10 @@
 {
   "version": 2,
   "cleanUrls": true,
-  "builds": [
+  "rewrites": [
     {
-      "src": "package.json",
-      "use": "@vercel/static-build",
-      "config": {
-        "distDir": "dist"
-      }
-    }
-  ],
-  "routes": [
-    {
-      "src": "/tip/(.*)",
-      "dest": "https://tip.givta.com.ng/tip/$1"
-    },
-    {
-      "src": "/login",
-      "dest": "/index.html"
-    },
-    {
-      "src": "/signup",
-      "dest": "/index.html"
-    },
-    {
-      "src": "/forgot-password",
-      "dest": "/index.html"
-    },
-    {
-      "src": "/payment",
-      "dest": "/index.html"
-    },
-    {
-      "src": "/edit-profile",
-      "dest": "/index.html"
-    },
-    {
-      "src": "/security",
-      "dest": "/index.html"
-    },
-    {
-      "src": "/analytics",
-      "dest": "/index.html"
-    },
-    {
-      "src": "/notifications",
-      "dest": "/index.html"
-    },
-    {
-      "src": "/app-preferences",
-      "dest": "/index.html"
-    },
-    {
-      "src": "/privacy-policy",
-      "dest": "/index.html"
-    },
-    {
-      "src": "/terms-of-service",
-      "dest": "/index.html"
-    },
-    {
-      "src": "/help-support",
-      "dest": "/index.html"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/index.html"
+      "source": "/(.*)",
+      "destination": "/index.html"
     }
   ],
   "headers": [
