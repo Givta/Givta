@@ -1,64 +1,71 @@
 {
   "version": 2,
   "cleanUrls": true,
-  "buildCommand": "npm run export",
-  "outputDirectory": "dist",
-  "rewrites": [
+  "builds": [
     {
-      "source": "/tip/:path*",
-      "destination": "https://tip.givta.com.ng/tip/:path*"
+      "src": "package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "dist"
+      }
+    }
+  ],
+  "routes": [
+    {
+      "src": "/tip/(.*)",
+      "dest": "https://tip.givta.com.ng/tip/$1"
     },
     {
-      "source": "/login",
-      "destination": "/index.html"
+      "src": "/login",
+      "dest": "/index.html"
     },
     {
-      "source": "/signup",
-      "destination": "/index.html"
+      "src": "/signup",
+      "dest": "/index.html"
     },
     {
-      "source": "/forgot-password",
-      "destination": "/index.html"
+      "src": "/forgot-password",
+      "dest": "/index.html"
     },
     {
-      "source": "/payment",
-      "destination": "/index.html"
+      "src": "/payment",
+      "dest": "/index.html"
     },
     {
-      "source": "/edit-profile",
-      "destination": "/index.html"
+      "src": "/edit-profile",
+      "dest": "/index.html"
     },
     {
-      "source": "/security",
-      "destination": "/index.html"
+      "src": "/security",
+      "dest": "/index.html"
     },
     {
-      "source": "/analytics",
-      "destination": "/index.html"
+      "src": "/analytics",
+      "dest": "/index.html"
     },
     {
-      "source": "/notifications",
-      "destination": "/index.html"
+      "src": "/notifications",
+      "dest": "/index.html"
     },
     {
-      "source": "/app-preferences",
-      "destination": "/index.html"
+      "src": "/app-preferences",
+      "dest": "/index.html"
     },
     {
-      "source": "/privacy-policy",
-      "destination": "/index.html"
+      "src": "/privacy-policy",
+      "dest": "/index.html"
     },
     {
-      "source": "/terms-of-service",
-      "destination": "/index.html"
+      "src": "/terms-of-service",
+      "dest": "/index.html"
     },
     {
-      "source": "/help-support",
-      "destination": "/index.html"
+      "src": "/help-support",
+      "dest": "/index.html"
     },
     {
-      "source": "/(.*)",
-      "destination": "/index.html"
+      "src": "/(.*)",
+      "dest": "/index.html"
     }
   ],
   "headers": [
