@@ -407,7 +407,7 @@ export const ChatBotScreen: React.FC = () => {
         // TODO: Navigate to deposit screen
         const depositMessage: Message = {
           id: Date.now().toString(),
-          text: 'You can deposit funds in the Wallet tab. Choose your deposit amount and use Paystack for secure payments.',
+          text: 'You can deposit funds in the Wallet tab. Choose your deposit amount and use our secure payment flow.',
           isUser: false,
           timestamp: new Date(),
         };

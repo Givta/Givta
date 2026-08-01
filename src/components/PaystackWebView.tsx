@@ -49,7 +49,7 @@ export const PaystackWebView: React.FC<PaystackWebViewProps> = ({
 
         if (paymentRef) {
           // Verify payment on backend
-          const verifyResponse = await apiService.verifyPaystackPayment(paymentRef);
+          const verifyResponse = await apiService.verifyPayment(paymentRef);
 
           if (verifyResponse.success) {
             // Payment was successful - wallet should be credited via webhook

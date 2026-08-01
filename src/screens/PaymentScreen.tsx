@@ -248,7 +248,7 @@ export const PaymentScreen: React.FC = () => {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${user?.tokens?.accessToken}`,
         },
-        body: JSON.stringify({ amount: numAmount, paymentMethod: 'paystack' }),
+        body: JSON.stringify({ amount: numAmount }),
       });
       const data = await res.json();
       if (data.success) {
@@ -523,7 +523,7 @@ export const PaymentScreen: React.FC = () => {
               {
                 icon: isDeposit ? 'shield-checkmark-outline' : 'swap-horizontal-outline',
                 text: isDeposit
-                  ? 'Secure payment powered by Paystack'
+                  ? 'Secure payment handled by our active gateway'
                   : 'Funds transferred to your verified account',
               },
               {

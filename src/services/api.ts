@@ -637,8 +637,8 @@ class ApiService {
     return this.request<Referral[]>(`/referrals?limit=${limit}`);
   }
 
-  // Paystack
-  async initializePaystackPayment(amount: number, email: string): Promise<ApiResponse<{
+  // Shared payment gateway helpers
+  async initializePayment(amount: number, email: string): Promise<ApiResponse<{
     authorization_url: string;
     access_code: string;
     reference: string;
@@ -647,20 +647,20 @@ class ApiService {
       authorization_url: string;
       access_code: string;
       reference: string;
-    }>('/payments/paystack/initialize', {
+    }>('/payments/initialize', {
       method: 'POST',
       body: JSON.stringify({ amount, email }),
     });
   }
 
-  async verifyPaystackPayment(reference: string): Promise<ApiResponse<{
+  async verifyPayment(reference: string): Promise<ApiResponse<{
     status: string;
     transaction: Transaction;
   }>> {
     return this.request<{
       status: string;
       transaction: Transaction;
-  }>(`/paystack/verify/${reference}`);
+    }>(`/payments/verify/${reference}`);
   }
 
   // Notifications

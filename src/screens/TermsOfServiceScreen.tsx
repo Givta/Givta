@@ -64,10 +64,10 @@ export const TermsOfServiceScreen: React.FC = () => {
           <Text style={styles.paragraph}>
             • Transaction Fees: Standard fees apply to money transfers (₦50 for transfers under ₦5,000, ₦100 for transfers ₦5,000-₦50,000), withdrawals (2.3% of withdrawal amount), and other services{'\n'}
               • Tip Fees: Tips sent through the platform incur a 5% processing fee. Recipients receive 95% of the tip amount, and the fee is deducted from the tipper{'\n'}
-            • Deposit Fees: Bank transfers are free; card deposits may incur Paystack processing fees{'\n'}
+            • Deposit Fees: Bank transfers are free; card deposits may incur processing fees{'\n'}
             • Refund Policy: Transaction fees are non-refundable. Transaction reversals are only possible in cases of system errors or fraud, subject to our investigation{'\n'}
             • Fee Changes: We will notify all users via in-app notifications, email, and SMS at least 30 days before implementing fee changes{'\n'}
-            • Payment Methods: Supported payment methods include bank transfers, debit/credit cards (via Paystack), and wallet-to-wallet transfers{'\n'}
+            • Payment Methods: Supported payment methods include bank transfers, debit/credit cards, and wallet-to-wallet transfers{'\n'}
             • Currency: All transactions are processed in Nigerian Naira (NGN)
           </Text>
         </Card>

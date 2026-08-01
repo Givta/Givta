@@ -109,7 +109,7 @@ export const PrivacyPolicyScreen: React.FC = () => {
           <Text style={styles.sectionTitle}>8. Third-Party Services</Text>
           <Text style={styles.paragraph}>
             Our app may integrate with third-party services:{'\n'}
-            • Payment processors (Paystack, banks){'\n'}
+            • Payment processors and banks{'\n'}
             • Analytics providers{'\n'}
             • Customer support tools{'\n'}
             • Cloud storage services{'\n'}
