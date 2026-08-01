@@ -187,6 +187,11 @@ export const PaymentScreen: React.FC = () => {
   const [showPaystack, setShowPaystack]       = useState(false);
   const [paymentUrl, setPaymentUrl]           = useState('');
   const [paymentReference, setPaymentReference] = useState('');
+  // Web-only: react-native-webview doesn't run on web at all, so the
+  // native flow above (embed checkout in a WebView modal) just spins
+  // forever there. On web we open checkout in a new tab instead and poll
+  // for completion here.
+  const [webPaymentPending, setWebPaymentPending] = useState(false);
 
   // Withdrawal fields
   const [accountNumber, setAccountNumber]     = useState('');
@@ -252,13 +257,79 @@ export const PaymentScreen: React.FC = () => {
       });
       const data = await res.json();
       if (data.success) {
-        setPaymentUrl(data.data.paymentUrl);
         setPaymentReference(data.data.reference);
-        setShowPaystack(true);
+
+        if (Platform.OS === 'web') {
+          // react-native-webview has no web implementation — mounting it
+          // here just spins forever with nothing ever loading. Open
+          // checkout in its own tab and poll our own backend for
+          // completion instead; works the same regardless of which
+          // payment provider is active, and doesn't depend on Squad (or
+          // any provider) redirecting back to a specific callback URL,
+          // since none is currently configured.
+          const webWindow = (globalThis as any).window;
+          const win = webWindow?.open(data.data.paymentUrl, '_blank');
+          setWebPaymentPending(true);
+          pollWebPaymentStatus(data.data.reference, win);
+        } else {
+          setPaymentUrl(data.data.paymentUrl);
+          setShowPaystack(true);
+        }
       } else throw new Error(data.error || 'Failed to initialise deposit');
     } catch (e: any) {
       Alert.alert('Error', e.message || 'Failed to start payment');
     } finally { setLoading(false); }
+  };
+
+  // Web-only. Checks payment status every 3s for up to 5 minutes. Stops
+  // early if the user closes the checkout tab without paying (nothing to
+  // wait for at that point) or navigates away from this screen.
+  const pollWebPaymentStatus = (reference: string, checkoutWindow?: any) => {
+    let attempts = 0;
+    const maxAttempts = 100; // ~5 minutes at 3s intervals
+    const interval = setInterval(async () => {
+      attempts += 1;
+      try {
+        const result = await apiService.verifyPayment(reference);
+        const status = (result as any)?.data?.status;
+
+        if (status === 'success') {
+          clearInterval(interval);
+          setWebPaymentPending(false);
+          await refreshBalance();
+          Alert.alert('Payment successful 🎉', 'Your wallet has been credited.');
+          navigation.goBack();
+          return;
+        }
+
+        if (status === 'failed' || status === 'abandoned') {
+          clearInterval(interval);
+          setWebPaymentPending(false);
+          Alert.alert('Payment not completed', 'The payment was not successful. You can try again.');
+          return;
+        }
+      } catch {
+        // Transient network/verify error — just try again next tick.
+      }
+
+      // If the user closed the checkout tab, give the webhook a little
+      // extra time to land (it can lag slightly behind the redirect)
+      // rather than stopping immediately, but don't wait the full 5
+      // minutes for a tab that's already gone.
+      if (checkoutWindow?.closed && attempts > 5) {
+        clearInterval(interval);
+        setWebPaymentPending(false);
+      }
+
+      if (attempts >= maxAttempts) {
+        clearInterval(interval);
+        setWebPaymentPending(false);
+        Alert.alert(
+          'Still processing',
+          "This is taking longer than usual. If you completed the payment, your balance will update shortly — you can also check back on the wallet screen."
+        );
+      }
+    }, 3000);
   };
 
   const handleWithdrawal = async () => {
@@ -573,7 +644,7 @@ export const PaymentScreen: React.FC = () => {
         onDone={() => { setShowWithdrawSuccess(false); navigation.goBack(); }}
       />
 
-      {/* Paystack WebView */}
+      {/* Paystack WebView — native only, react-native-webview has no web build */}
       <Modal
         visible={showPaystack}
         animationType="slide"
@@ -603,6 +674,39 @@ export const PaymentScreen: React.FC = () => {
             reference={paymentReference}
           />
         </SafeAreaView>
+      </Modal>
+
+      {/* Web-only waiting screen — checkout happens in its own tab, this
+          polls for completion instead of embedding a WebView. */}
+      <Modal
+        visible={webPaymentPending}
+        transparent
+        animationType="fade"
+        onRequestClose={() => {}}
+      >
+        <View style={wm.overlay}>
+          <View style={[wm.sheet, { alignItems: 'center', paddingTop: 32 }]}>
+            <ActivityIndicator size="large" color={C.brand} />
+            <Text style={[wm.title, { marginTop: 20, fontSize: 18 }]}>Waiting for payment</Text>
+            <Text style={wm.sub}>
+              Complete your payment in the tab that just opened. This will update automatically once it's done.
+            </Text>
+            <TouchableOpacity
+              style={[wm.doneBtn, { marginTop: 4 }]}
+              onPress={() => {
+                if (paymentReference) pollWebPaymentStatus(paymentReference);
+              }}
+            >
+              <Text style={wm.doneBtnText}>I've completed payment</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={{ marginTop: 14, padding: 8 }}
+              onPress={() => setWebPaymentPending(false)}
+            >
+              <Text style={{ color: C.textSub, fontSize: 13, fontWeight: '600' }}>Cancel and check later</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
       </Modal>
     </SafeAreaView>
   );
