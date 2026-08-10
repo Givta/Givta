@@ -14,7 +14,14 @@ Givta gives every creator a personalised tipping link in under two minutes. Fans
 
 ## Screenshots
 
-> *(Add 3–4 screenshots here: home/wallet screen, tipping link page, transaction history, withdrawal screen)*
+> *## Screenshots
+
+<p align="center">
+  <img src="screenshots/home.png" width="200" alt="Home & Wallet"/>
+  <img src="screenshots/withdraw.png" width="200" alt="Withdrawal Screen"/>
+  <img src="screenshots/sign-up.png" width="200" alt="Tipping Link Page"/>
+  <img src="screenshots/login.png" width="200" alt="Transaction History"/>
+</p>*
 
 ---
 
